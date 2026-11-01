@@ -1,5 +1,5 @@
 # ngtstudio
-NGT Studio is a Windows and Python utility designed to extract music from Neo-Geo MAME ROMs (.zip). It features a built-in, native jukebox player that directly emulates the original YM2610 and Z80 sound chips. Additionally, it generates on-the-fly, ready-to-use Neo-Geo ROM files compatible with MAME, Darksoft, and NeoSD Pro cartridges.
+NGT Studio is a Windows and Python utility designed to extract music from Neo-Geo MAME ROMs (.zip). It features a built-in, native jukebox player that directly emulates the original YM2610 and Z80 sound chips using a custom music album file format (.ngt2), which contains only the numeric data related to the YM2610/Z80 chips, indexes, streams, and samples. Additionally, it can generate on-the-fly, ready-to-use Neo-Geo ROM files compatible with MAME, Darksoft, and NeoSD Pro cartridges, allowing you to include your favorite music :)
 
 NGT Studio - changelog
 ==================================
