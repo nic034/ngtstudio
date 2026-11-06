@@ -22,12 +22,16 @@ SOFTWARE.
 
 -------------------------------------------------------------------------------
 This license covers the code written for NGT Studio (ngt_studio.py, m1render.cpp,
-jukebox_rom/, tests/). The bundled ymfm (BSD 3-Clause) and z80 (MIT) libraries
-keep their own licenses: see THIRD_PARTY_NOTICES.md.
+jukebox_rom/, tests/, windows/ build scripts and the documentation). The bundled
+ymfm (BSD 3-Clause) and z80 (MIT) libraries keep their own licenses: see
+THIRD_PARTY_NOTICES.md.
 It does NOT cover any Neo Geo game, BIOS or music: none is included, and the
-ROMs you build contain data taken from your own neogeo.zip.
-It does NOT cover the four built-in screen-saver picture sheets (JB_BOXES_B85 in
-ngt_studio.py). The game box and the Neo Geo console show SNK artwork and
-trademarks, (c) SNK. The Delta Island logo and triangle were
-provided by the author (Nic034 / Delta Island), all rights reserved. None of
-them is licensed under the MIT License.
+ROMs you build contain data taken from your own neogeo.zip and romsets; do not
+distribute them.
+It does NOT cover the built-in screen-saver pictures (JB_BOXES_B85 in
+ngt_studio.py and the jukebox tiles). The game box and the Neo Geo console show
+SNK artwork and trademarks, (c) SNK. The Delta Island logo and triangle and the
+spinning CD icon are artwork by the author (Nic034 / Delta Island), all rights
+reserved. None of them is licensed under the MIT License.
+See NOTICE.md and MENTIONS_LEGALES.md at the root of the repository for the
+details (what is covered, trademarks, network access, privacy).

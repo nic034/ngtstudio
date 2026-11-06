@@ -1,113 +1,153 @@
-# ngtstudio
-NGT Studio is a Windows and Python utility designed to extract music from Neo-Geo MAME ROMs (.zip). It features a built-in, native jukebox player that directly emulates the original YM2610 and Z80 sound chips using a custom music album file format (.ngt2), which contains only the numeric data related to the YM2610/Z80 chips, indexes, streams, and samples. Additionally, it can generate on-the-fly, ready-to-use Neo-Geo ROM files compatible with MAME, Darksoft, and NeoSD Pro cartridges, allowing you to include your favorite music :)
+# NGT Studio
 
-NGT Studio - changelog
-==================================
+*[Version française plus bas](#ngt-studio--version-française)*
 
-2.5.25 (2026-10-31)
-- Jukebox screen saver: fixed the bouncing point sphere (new in 2.5.24) overlapping and partly going under the
-  small scrolling text at the bottom of the screen on every bounce. The floor is now right above that text.
+**Neo Geo music: extract it, listen to it, build a jukebox cartridge.**
 
-2.5.24 (2026-10-30)
-- Jukebox screen saver, point sphere: it now bounces like a ball across the bottom of the screen, left to
-  right, at varying heights, while still spinning on itself as before. Slow, gravity-based motion; always
-  stays on screen.
-- Jukebox ROM source: speed up the remaining per-frame multiplications by a fixed constant (scrolling-text
-  wrap, CD icon fade, vumeter colours), no behaviour change.
+NGT Studio is a Windows / Linux / Python utility (GUI + command line) that extracts the music of Neo Geo games from
+**your own MAME romsets** (`.zip`). A built-in player emulates the original sound hardware (Z80 + YM2610) and plays
+the music with visualisations. Albums are saved as small `.ngt` files that contain only numeric data for the YM2610 / Z80
+(indexes, streams, samples): no audio recording, no game code.
 
-2.5.23 (2026-10-28)
-- Jukebox ROM source: cleanup pass, unused symbols/data removed, no behaviour change (22 bytes smaller).
+It can also build, on the fly, a **playable jukebox ROM** for MAME, Darksoft Multi and NeoSD Pro cartridges, so you can
+carry your favourite music on a real Neo Geo.
 
-2.5.22 (2026-10-28)
-- Jukebox screen saver: new spinning CD icon, top-right corner, continuous fade in/out (your own artwork, built in).
+> ## ⚠️ You need your own files
+>
+> - **Game romsets**: not included, they remain the property of their owners.
+> - **`neogeo.zip` (Neo Geo BIOS)**: not included and never will be (SNK's copyrighted BIOS). It is **required to build a
+>   jukebox cartridge** (the build reads the cartridge security block and the system font from it) and to test it in MAME.
+>   Extracting and listening do **not** need it.
+> - A jukebox ROM you build contains these two small BIOS items: **share the tool, not the built ROMs.**
 
-2.5.21 (2026-10-26)
-- Jukebox screen saver: the two chip objects removed; four built-in sheets remain (box, console, Delta Island logo and triangle).
+## Features
 
-2.5.20 (2026-10-26)
-- Jukebox: fixed small random coloured dots/dashes on a real console (palettes now written only in the vertical blank).
-- Jukebox: a press while the screen saver starts only wakes it up (it could stop the music).
-- Jukebox (MVS): a coin inserted while the screen saver starts no longer leaves dimmed colours on the player screen.
-- Cartridge: a jukebox_boxesN.png next to the program replaces only built-in sheet N (it replaced all of them).
-- Cartridge: a picture sheet path containing "@" (Windows folder "name@pc") works.
+- **Extract**: finds the music in a romset, detects loops and duplicates, cuts trailing silence, keeps short looping tracks.
+- **Player**: plays albums with an emulated YM2610, VU meters, keyboard and piano roll, game screenshots.
+- **Cartridge**: builds a jukebox ROM (MAME set `ngjb.zip`, Darksoft Multi folder, NeoSD `.neo`) from several albums, with a capacity check.
+- **Jukebox ROM**: pad controls (A play/pause, B stop, C/D previous/next, SELECT AUTO / LOOP / RAND), full-screen VU meters,
+  Amiga-style screen saver after 5 minutes. Works on MVS, AES, original BIOS and UniBIOS.
 
-2.5.19 (2026-10-26)
-- Jukebox: RAND mode (SELECT: AUTO / LOOP / RAND), a random track of any album; AUTO keeps chaining every album.
-- Jukebox: screen saver after 5 minutes; player animations stopped while it is on, resumed on wake-up.
-- Jukebox: four new screen-saver objects: two chips, the Delta Island logo and triangle (6 in all).
-- Extraction: trailing silence cut at the end of non-looping tracks; short looping tracks kept by default.
-- Extraction: fixed the ADPCM-A sample length (Puzzle De Pon: 16.8 MB of samples -> 54 KB).
+## Quick start
 
-2.5.18 (2026-10-23)
-- Screen saver: the checkerboard floats much more and follows the music (bigger, faster waves when it is loud).
+Requirements: Python 3.8 or later with tkinter (Linux: `python3-tk`). The other modules (`numpy`, optionally `sounddevice`,
+`Pillow`, `soundfile`) are installed from PyPI on first launch.
 
-2.5.17 (2026-10-23)
-- Screen-saver objects (game box and Neo Geo console) built in: no picture file needed anymore.
-- Fixed: building only the MAME format into a new folder failed.
+```
+python ngt_studio.py                                                     # GUI: Extract / Player / Cartridge
+python ngt_studio.py --cli --src roms/aof2.zip --out albums              # extract from the command line
+python ngt_studio.py --cart albums/aof2.ngt albums/samsho3.ngt --out jukebox   # build a jukebox cartridge
+python ngt_studio.py --help
+```
 
-2.5.16 (2026-10-23)
-- The MAME cartridge is now a regular zip set (ngjb.zip) instead of a folder. Same files, same launch command.
+Test a built jukebox in MAME (put `neogeo.zip` in the output folder):
+`mame neogeo ngjb -hashpath hash -rompath .`
 
-2.5.15 (2026-10-23)
-- Screen saver: fewer objects on screen (2 to 8) and a console never shares its lines with another object,
-  for more headroom under the 96-sprites-per-line hardware limit. Still one console for four boxes.
+The `hash/neogeo.xml` produced by the build must be the one MAME reads, otherwise MAME shows
+`P2 00 = FIRST BANK MISSING`. Use `-hashpath hash` from the output folder.
 
-2.5.14 (2026-10-23)
-- New Amiga-style screen saver (after 10 minutes): big rainbow sine scroll that reacts to the music,
-  rippling isometric checkerboard, scrolling album/track/time info.
-- Optional rotating objects drifting across the screen, from your own picture sheets (none shipped).
-- Header notes bounce while music plays.
-- Fixed: UniBIOS splash screen altered on AES.
-- Extraction: at most 99 tracks per game (SFX, jingles and short tracks are dropped first if needed).
-- Lighter tool: scipy no longer needed, smaller engines, more room for music in the P-ROM.
-- Many robustness fixes (corrupted files, command-line errors, oversized samples).
+**Windows executable**: it is not stored in this repository. To build it yourself on Windows with Python 3.12, run
+`sources\windows\build_exe.bat`. A self-built executable is not code-signed, so SmartScreen may warn.
 
-2.5.13 (2026-10-21)
-- Jukebox: animated note in the header, white note after the title.
+Full documentation (options, formats, controls, screen saver, rebuilding the ROM and the engine): [`sources/README.md`](sources/README.md).
 
-2.5.12 (2026-10-20)
-- Windows: paths with any characters (Unicode) now work.
-- Engine uses about 3x less memory.
-- Jukebox Z80 driver: clean ADPCM-B stop.
+## Repository layout
 
-2.5.11 (2026-10-20)
-- Fixes from a full code review: engine time-outs, error reporting, Cartridge tab, command line.
+| Path | Content |
+|---|---|
+| `ngt_studio.py` | The whole application in one file (same file as `sources/ngt_studio.py`). The engine, the 68000 jukebox program, the Z80 driver and the tiles are embedded in it. |
+| `sources/` | Complete sources: C++ engine (`m1render/`), jukebox ROM (`jukebox_rom/`), tests, Windows build files, changelogs, licences. |
+| `LICENSE` · `NOTICE.md` · `MENTIONS_LEGALES.md` · `sources/THIRD_PARTY_NOTICES.md` | MIT licence · what it does not cover · legal notice (FR, with an English summary) · third-party licences. |
 
-2.5.10 (2026-10-20)
-- Fixes: merged MAME sets with clones, duplicate detection, sample-based music length.
+## Status
 
-2.5.9 (2026-10-20)
-- Extraction: better loop and duplicate detection, separate ADPCM-B ROMs recognised by content,
-  temporary folders cleaned up.
+- The jukebox cartridge was tested **in MAME** (7 BIOS: MVS and AES, original and UniBIOS) and boots and plays on a
+  Darksoft Multi-AES (UniBIOS 4.0). It has **not** been verified on every real hardware / flash cartridge: use it at your own risk.
+- Latest version: **2.5.25**. Version history: [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt) (short version: [`sources/CHANGES.txt`](sources/CHANGES.txt)).
 
-2.5.8 (2026-10-19)
-- Extraction: music made of long ADPCM samples (Pulstar, Breakers Revenge...) is recognised as music.
-- Jukebox: inserting a coin on MVS no longer restarts it; ROM usage shown top right.
+## License and legal
 
-2.5.7 (2026-10-19)
-- Jukebox: fixed the crash when START is pressed on AES / UniBIOS.
+- Code: **MIT License**, © 2026 Nicolas (Nic034), see [`LICENSE`](LICENSE).
+- **Not covered by the MIT License**: the built-in screen-saver pictures (SNK artwork, author's artwork), and of course every
+  game, BIOS and music. Details in [`NOTICE.md`](NOTICE.md).
+- Third-party libraries (ymfm, z80, and the components of the Windows build): [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md).
+- Legal notice (publisher, host, trademarks, network access, privacy, liability): [`MENTIONS_LEGALES.md`](MENTIONS_LEGALES.md).
+- NGT Studio is an independent fan project, **not affiliated with, endorsed by or sponsored by SNK**, MAME, Darksoft, NeoSD or any game publisher.
+  Neo Geo and SNK are trademarks of their owner.
 
-2.5.6 (2026-10-19)
-- Cartridge tab: progress bar with time left; stream compression about 25x faster.
+---
 
-2.5.5 (2026-10-19)
-- Jukebox: first screen saver (dimmed screen with a bouncing "NEO GEO").
+# NGT Studio : version française
 
-2.5.4 (2026-10-19)
-- Extraction: first-generation games now work (Magician Lord...); short tracks can be skipped or kept.
-- Jukebox: layout moved away from the screen edges (CRT-safe).
+**La musique Neo Geo : l'extraire, l'écouter, fabriquer une cartouche jukebox.**
 
-2.5.3 (2026-10-17)
-- Windows executable, no Python needed.
-- neogeo.zip found and checked automatically.
+NGT Studio est un utilitaire Windows / Linux / Python (interface graphique + ligne de commande) qui extrait la musique des
+jeux Neo Geo à partir de **vos propres romsets MAME** (`.zip`). Un lecteur intégré émule le matériel sonore d'origine
+(Z80 + YM2610) et joue la musique avec des visualisations. Les albums sont enregistrés dans de petits fichiers `.ngt` qui
+ne contiennent que des données numériques pour le YM2610 / Z80 (index, flux, samples) : ni enregistrement audio, ni code de jeu.
 
-2.5.2 (2026-10-17)
-- Back to the colourful theme.
-- Public source release under the MIT License.
+Il peut aussi construire à la volée une **ROM jukebox jouable** pour MAME et pour les cartouches Darksoft Multi et NeoSD Pro,
+afin d'emporter votre musique préférée sur une vraie Neo Geo.
 
-2.5.1 (2026-10-17)
-- Calmer colour theme (kept in the sources as an option).
+> ## ⚠️ Il vous faut vos propres fichiers
+>
+> - **Romsets des jeux** : non fournis, ils restent la propriété de leurs ayants droit.
+> - **`neogeo.zip` (BIOS Neo Geo)** : non fourni et ne le sera jamais (BIOS de SNK, protégé par le droit d'auteur). Il est
+>   **obligatoire pour construire une cartouche jukebox** (la construction y lit le bloc de sécurité de la cartouche et la police du
+>   système) et pour la tester dans MAME. L'extraction et l'écoute n'en ont **pas** besoin.
+> - Une ROM jukebox construite contient ces deux petits éléments du BIOS : **partagez l'outil, pas les ROM construites.**
 
-2.5.0 (2026-10-17)
-- Jukebox redesign: custom icons and pad buttons, smooth progress bar and VU meters with peak hold,
-  rainbow title, scrolling "now playing" marquee.
+## Fonctions
+
+- **Extract** : trouve la musique d'un romset, détecte boucles et doublons, coupe le silence final, garde les courtes pistes qui bouclent.
+- **Player** : lit les albums avec un YM2610 émulé, vumètres, clavier et piano roll, captures d'écran des jeux.
+- **Cartridge** : construit une ROM jukebox (set MAME `ngjb.zip`, dossier Darksoft Multi, `.neo` NeoSD) à partir de plusieurs albums, avec contrôle de capacité.
+- **ROM jukebox** : commandes à la manette (A lecture/pause, B stop, C/D piste précédente/suivante, SELECT AUTO / LOOP / RAND),
+  vumètres plein écran, économiseur d'écran style Amiga après 5 minutes. Fonctionne sur MVS, AES, BIOS d'origine et UniBIOS.
+
+## Démarrage rapide
+
+Prérequis : Python 3.8 ou plus récent avec tkinter (Linux : `python3-tk`). Les autres modules (`numpy`, et en option
+`sounddevice`, `Pillow`, `soundfile`) sont installés depuis PyPI au premier lancement.
+
+```
+python ngt_studio.py                                                     # interface : Extract / Player / Cartridge
+python ngt_studio.py --cli --src roms/aof2.zip --out albums              # extraction en ligne de commande
+python ngt_studio.py --cart albums/aof2.ngt albums/samsho3.ngt --out jukebox   # construire une cartouche jukebox
+python ngt_studio.py --help
+```
+
+Tester un jukebox construit dans MAME (mettre `neogeo.zip` dans le dossier de sortie) :
+`mame neogeo ngjb -hashpath hash -rompath .`
+
+Le `hash/neogeo.xml` produit par la construction doit être celui que MAME lit, sinon MAME affiche
+`P2 00 = FIRST BANK MISSING`. Lancez MAME avec `-hashpath hash` depuis le dossier de sortie.
+
+**Exécutable Windows** : il n'est pas conservé dans ce dépôt. Pour le fabriquer vous-même sous Windows avec Python 3.12,
+lancez `sources\windows\build_exe.bat`. Un exécutable construit par vos soins n'est pas signé : SmartScreen peut avertir.
+
+Documentation complète (options, formats, commandes, économiseur d'écran, reconstruction de la ROM et du moteur) : [`sources/README.md`](sources/README.md).
+
+## Organisation du dépôt
+
+| Chemin | Contenu |
+|---|---|
+| `ngt_studio.py` | Toute l'application en un seul fichier (même fichier que `sources/ngt_studio.py`). Le moteur, le programme 68000 du jukebox, le driver Z80 et les tuiles y sont intégrés. |
+| `sources/` | Sources complètes : moteur C++ (`m1render/`), ROM jukebox (`jukebox_rom/`), tests, fichiers de construction Windows, journaux de modifications, licences. |
+| `LICENSE` · `NOTICE.md` · `MENTIONS_LEGALES.md` · `sources/THIRD_PARTY_NOTICES.md` | Licence MIT · ce qu'elle ne couvre pas · mentions légales (FR, avec un résumé en anglais) · licences tierces. |
+
+## État
+
+- La cartouche jukebox a été testée **dans MAME** (7 BIOS : MVS et AES, d'origine et UniBIOS) et démarre et joue sur une
+  Darksoft Multi-AES (UniBIOS 4.0). Elle n'a **pas** été vérifiée sur tous les matériels réels ni toutes les cartouches flash : à utiliser à vos risques.
+- Dernière version : **2.5.25**. Historique : [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt) (version courte : [`sources/CHANGES.txt`](sources/CHANGES.txt)).
+
+## Licence et mentions légales
+
+- Code : **licence MIT**, © 2026 Nicolas (Nic034), voir [`LICENSE`](LICENSE).
+- **Non couverts par la licence MIT** : les images intégrées de l'économiseur d'écran (illustrations SNK, illustrations de l'auteur) et, bien sûr,
+  les jeux, BIOS et musiques. Détails dans [`NOTICE.md`](NOTICE.md).
+- Bibliothèques tierces (ymfm, z80, et composants de la version Windows) : [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md).
+- Mentions légales (éditeur, hébergeur, marques, accès réseau, données personnelles, responsabilité) : [`MENTIONS_LEGALES.md`](MENTIONS_LEGALES.md).
+- NGT Studio est un projet de fan indépendant, **sans lien avec SNK**, MAME, Darksoft, NeoSD ni aucun éditeur de jeux, et non approuvé ni parrainé par eux.
+  Neo Geo et SNK sont des marques de leur titulaire.
