@@ -1,0 +1,110 @@
+NGT Studio - changelog since 2.5.0
+==================================
+
+2.5.25 (2026-10-31)
+- Jukebox screen saver: fixed the bouncing point sphere (new in 2.5.24) overlapping and partly going under the
+  small scrolling text at the bottom of the screen on every bounce. The floor is now right above that text.
+
+2.5.24 (2026-10-30)
+- Jukebox screen saver, point sphere: it now bounces like a ball across the bottom of the screen, left to
+  right, at varying heights, while still spinning on itself as before. Slow, gravity-based motion; always
+  stays on screen.
+- Jukebox ROM source: sped up the remaining per-frame multiplications by a fixed constant (scrolling-text
+  wrap, CD icon fade, vumeter colours), no behaviour change.
+
+2.5.23 (2026-10-28)
+- Jukebox ROM source: cleanup pass, unused symbols/data removed, no behaviour change (22 bytes smaller).
+
+2.5.22 (2026-10-28)
+- Jukebox screen saver: new spinning CD icon, top-right corner, continuous fade in/out (your own artwork, built in).
+
+2.5.21 (2026-10-26)
+- Jukebox screen saver: the two chip objects removed; four built-in sheets remain (box, console, Delta Island logo and triangle).
+
+2.5.20 (2026-10-26)
+- Jukebox: fixed small random coloured dots/dashes on a real console (palettes now written only in the vertical blank).
+- Jukebox: a press while the screen saver starts only wakes it up (it could stop the music).
+- Jukebox (MVS): a coin inserted while the screen saver starts no longer leaves dimmed colours on the player screen.
+- Cartridge: a jukebox_boxesN.png next to the program replaces only built-in sheet N (it replaced all of them).
+- Cartridge: a picture sheet path containing "@" (Windows folder "name@pc") works.
+
+2.5.19 (2026-10-26)
+- Jukebox: RAND mode (SELECT: AUTO / LOOP / RAND), a random track of any album; AUTO keeps chaining every album.
+- Jukebox: screen saver after 5 minutes; player animations stopped while it is on, resumed on wake-up.
+- Jukebox: four new screen-saver objects: two chips, the Delta Island logo and triangle (6 in all).
+- Extraction: trailing silence cut at the end of non-looping tracks; short looping tracks kept by default.
+- Extraction: fixed the ADPCM-A sample length (Puzzle De Pon: 16.8 MB of samples -> 54 KB).
+
+2.5.18 (2026-10-23)
+- Screen saver: the checkerboard floats much more and follows the music (bigger, faster waves when it is loud).
+
+2.5.17 (2026-10-23)
+- Screen-saver objects (game box and Neo Geo console) built in: no picture file needed anymore.
+- Fixed: building only the MAME format into a new folder failed.
+
+2.5.16 (2026-10-23)
+- The MAME cartridge is now a regular zip set (ngjb.zip) instead of a folder. Same files, same launch command.
+
+2.5.15 (2026-10-23)
+- Screen saver: fewer objects on screen (2 to 8) and a console never shares its lines with another object,
+  for more headroom under the 96-sprites-per-line hardware limit. Still one console for four boxes.
+
+2.5.14 (2026-10-23)
+- New Amiga-style screen saver (after 10 minutes): big rainbow sine scroll that reacts to the music,
+  rippling isometric checkerboard, scrolling album/track/time info.
+- Optional rotating objects drifting across the screen, from your own picture sheets (none shipped).
+- Header notes bounce while music plays.
+- Fixed: UniBIOS splash screen altered on AES.
+- Extraction: at most 99 tracks per game (SFX, jingles and short tracks are dropped first if needed).
+- Lighter tool: scipy no longer needed, smaller engines, more room for music in the P-ROM.
+- Many robustness fixes (corrupted files, command-line errors, oversized samples).
+
+2.5.13 (2026-10-21)
+- Jukebox: animated note in the header, white note after the title.
+
+2.5.12 (2026-10-20)
+- Windows: paths with any characters (Unicode) now work.
+- Engine uses about 3x less memory.
+- Jukebox Z80 driver: clean ADPCM-B stop.
+
+2.5.11 (2026-10-20)
+- Fixes from a full code review: engine time-outs, error reporting, Cartridge tab, command line.
+
+2.5.10 (2026-10-20)
+- Fixes: merged MAME sets with clones, duplicate detection, sample-based music length.
+
+2.5.9 (2026-10-20)
+- Extraction: better loop and duplicate detection, separate ADPCM-B ROMs recognised by content,
+  temporary folders cleaned up.
+
+2.5.8 (2026-10-19)
+- Extraction: music made of long ADPCM samples (Pulstar, Breakers Revenge...) is recognised as music.
+- Jukebox: inserting a coin on MVS no longer restarts it; ROM usage shown top right.
+
+2.5.7 (2026-10-19)
+- Jukebox: fixed the crash when START is pressed on AES / UniBIOS.
+
+2.5.6 (2026-10-19)
+- Cartridge tab: progress bar with time left; stream compression about 25x faster.
+
+2.5.5 (2026-10-19)
+- Jukebox: first screen saver (dimmed screen with a bouncing "NEO GEO").
+
+2.5.4 (2026-10-19)
+- Extraction: first-generation games now work (Magician Lord...); short tracks can be skipped or kept.
+- Jukebox: layout moved away from the screen edges (CRT-safe).
+
+2.5.3 (2026-10-17)
+- Windows executable, no Python needed.
+- neogeo.zip found and checked automatically.
+
+2.5.2 (2026-10-17)
+- Back to the colourful theme.
+- Public source release under the MIT License.
+
+2.5.1 (2026-10-17)
+- Calmer colour theme (kept in the sources as an option).
+
+2.5.0 (2026-10-17)
+- Jukebox redesign: custom icons and pad buttons, smooth progress bar and VU meters with peak hold,
+  rainbow title, scrolling "now playing" marquee.

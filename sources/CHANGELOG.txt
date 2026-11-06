@@ -1,0 +1,282 @@
+2.5.23 2026-10-28  Jukebox ROM source (core.S/ui3.S/draw3.S):
+                   CLEANED a handful of leftovers found unused by a full cross-reference of every symbol: 6 unused
+                        .equ constants, a vumeter colour table superseded by the existing per-palette table, and an
+                        unused " BANK(S) OK" string.  No behaviour change (confirmed in MAME: boot, screen saver,
+                        checkerboard, floating objects, spinning CD all unaffected); 22 bytes smaller
+
+2.5.22 2026-10-28  Jukebox screen saver:
+                   NEW  spinning CD icon, fixed in the top-right corner: 16-frame rotation (built in as a 5th
+                        sheet, your own artwork), continuous fade in and out.  Drawn above the checkerboard and
+                        the floating objects but below the scrolling text, so it is never covered and never
+                        covers the text.  The floating-object system cannot pick this sheet at random: it stays
+                        fixed in its corner.
+
+2.5.21 2026-10-26  Jukebox screen saver:
+                   REMOVED the two chip objects (64-pin and 28-pin): they did not look good.  Four built-in sheets
+                        remain: game box, Neo Geo console, Delta Island logo and triangle (four boxes for one object
+                        of the three other sheets, which take turns).  jukebox_boxes3.png and jukebox_boxes4.png next
+                        to the program now replace the logo and the triangle; jukebox_boxes5.png and 6 add sheets
+2.5.20 2026-10-26  Jukebox ROM:
+                   FIXED small coloured dots / dashes appearing at random on a real console (not in MAME): the
+                        palettes were written during the active display (the rainbow title every 3 frames, and every
+                        palette change when the screen saver starts or stops).  On the Neo Geo the CPU has priority
+                        over the video, so each colour written then shows on a pixel.  All these writes now happen in
+                        the vertical blank: the title colours are prepared in a buffer, the palette sets are computed
+                        by the main loop and only copied by the interrupt (11 of the 40 lines at most).  The colours
+                        themselves are unchanged (palette RAM identical in MAME)
+                   FIXED a press during the two frames the screen saver takes to start (palettes being set) acted
+                        as a normal command (stop, next...) instead of only waking it up
+                   FIXED MVS: a coin inserted during those two frames could leave the dimmed screen-saver colours
+                        on the player screen
+                   Cartridge:
+                   CHANGED a jukebox_boxesN.png next to the program now replaces only the built-in sheet N (it
+                        replaced all of them: with the two sheets of 2.5.16 still there, the chips and logos were lost)
+                   FIXED a sheet path containing "@" (Windows folder "name@pc") was cut: only a final "@number"
+                        (enlargement) is read
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia).
+2.5.19 2026-10-26  Jukebox ROM:
+                   NEW  RAND mode: SELECT now cycles AUTO -> LOOP -> RAND; RAND plays a random track of any album
+                        (never the same twice in a row) and never stops.  AUTO already chained every album endlessly
+                        (after the last track of the last album: the first album; checked in MAME)
+                   CHANGED screen saver after 5 minutes without a press (was 10)
+                   IMPROVED while the screen saver is on, the player screen animations are stopped (VU meters and
+                        peaks, header notes, rainbow title, marquee); they resume on wake-up.  Only the voice levels
+                        keep running (they drive the sine scroll)
+                   NEW  four more built-in screen-saver objects: a 64-pin chip, a 28-pin chip, the Delta Island logo
+                        and the Delta Island triangle (both enlarged ~25 %).  Four boxes for one object of the other
+                        sheets, which take turns; up to 6 sheets (jukebox_boxes.png ... jukebox_boxes6.png, --boxes
+                        a,b,...; "sheet.png@1.3" enlarges a sheet, capped at 46 px high).  Measured in MAME: 94 sprites
+                        per line at most, 95 in the worst case (two logos on one line; limit 96), 35 of the 40 lines
+                        of the vertical blank (unchanged: the rotation base no longer divides per sheet and frame)
+                   Extraction:
+                   IMPROVED a track that does not loop now ends 1 s after its last sound: the trailing silence
+                        (up to ~3 s, the time the engine waits before deciding that a track has ended) is cut
+                   CHANGED short tracks (under 45 s): by default the ones that LOOP are kept (short game music loops)
+                        and the others skipped; it is also the choice without an answer or when not interactive (it
+                        skipped them all).  Puzzle De Pon: 3 -> 10 tracks; Windjammers: 6 -> 8 tracks
+                   FIXED ADPCM-A sample length: the chip stops when the low 20 bits of the address reach (end + 1);
+                        NGT Studio read the end register literally.  Puzzle De Pon (driver that leaves the end at
+                        0xFFFF): 16.8 MB of samples instead of 54 KB, too big for any jukebox cartridge (now 0.9 MB in
+                        all); 2020 Super Baseball: one track slightly wrong (now identical to the original render)
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia).
+2.5.18 2026-10-23  Jukebox ROM, screen saver:
+                   IMPROVED the checkerboard floats much more and follows the music: 3 px at rest up to 10 px when the
+                        music is loud, and faster too (one wave in 8.5 s when calm, about 1.5 s when very loud); two
+                        long crossing waves instead of a short one, so the 16-px columns stay close to each other.
+                        Measured in MAME: screen always covered, 93 sprites per line at most (unchanged), 35 of the
+                        40 lines of the vertical blank (was 32)
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia).
+2.5.17 2026-10-23  Jukebox cartridge:
+                   NEW  the screen-saver objects (a game box and a Neo Geo console) are built in: no PNG file needed.
+                        Your own jukebox_boxes.png / jukebox_boxes2.png next to the program still replace them,
+                        --boxes "" still disables them.  The built-in pictures are SNK artwork, not covered by the MIT
+                        License (see LICENSE).  The build result now says which objects were used
+                   FIXED building the MAME format alone (without Darksoft / NeoSD) into a folder that does not exist
+                        yet failed (bug added in 2.5.16)
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia).
+2.5.16 2026-10-23  Jukebox cartridge, MAME output:
+                   CHANGED the MAME set is now a zip, ngjb.zip, with the ROM files inside (like any MAME set), instead
+                        of a ngjb folder; same files, same contents.  Files of an older ngjb folder in the output
+                        folder are removed (MAME would read the folder first).  Same command:
+                        mame neogeo ngjb -hashpath hash -rompath .
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia).
+2.5.15 2026-10-23  Jukebox ROM, screen saver objects:
+                   IMPROVED more sprite headroom: a console (wide object, 4 sprites per line) never shares its lines
+                        with another object (nothing starts less than 63 frames before or after it), and the density
+                        is 2 to 8 objects (was 2 to 10).  Measured in MAME: at most 93 sprites on a line (limit 96,
+                        was 95), 32 of the 40 lines of the vertical blank (was 34)
+                        A console that cannot start yet is waited for, never replaced: still exactly one console
+                        for four boxes (measured 144 / 36 in 5 min)
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia).
+2.5.14 2026-10-23  Jukebox ROM:
+                   NEW  Amiga-style screen saver (after 10 minutes without a press, was 15): a big outlined rainbow sine scroll ("NEO GEO JUKEBOX - ENJOY FINE MUSIC !"
+                        while music plays, the wave swells with the music; "... THANKS FOR USING THIS SOFTWARE" when
+                        stopped or paused; credits line) over a very faint isometric checkerboard that scrolls and
+                        ripples like water, with album / track / elapsed / remaining time scrolling in small yellow
+                        letters at the top and bottom.  Animated by the VBlank interrupt; the wave moves in half steps
+                        and its height changes gradually (no jumps).  The C ROMs
+                        now hold these graphics (Darksoft crom0 word-interleaved, NeoSD byte-interleaved)
+                   NEW  the sine scroll follows the music much more: its height follows the total energy of the 7
+                        voices (28 to 64 px; it used to stay near the maximum), the wave speeds up when the music is
+                        loud, and the rainbow flashes on each drum hit (ADPCM-A).  Letters enlarged x5 (40 px)
+                   NEW  rotating objects drift diagonally between the checkerboard and the text, in a continuous
+                        stream (2 to 10 on screen, random starting points, 4 directions), with a light twinkling
+                        outline.  The pictures are YOUR sheets, never shipped with the tool: jukebox_boxes.png and
+                        jukebox_boxes2.png next to the program (or --boxes a.png,b.png); frames on a magenta
+                        background, tall (box) or wide (console) detected automatically; one object of the second
+                        sheet for four of the first.  Without sheets: no objects
+                   IMPROVED screen saver within the hardware limits, measured in MAME: at most 95 sprites on a line
+                        (limit 96) and 34 of the 40 lines of the vertical blank (the full text rewrite moved out of
+                        the interrupt, checkerboard ripple cached, bottom yellow line offset by 4 px)
+                   NEW  both header notes (yellow and white) bounce 2 pixels in counter-phase while music plays
+                   FIXED the UniBIOS splash was altered on AES (SNK logo, double-height letters): the jukebox tiles
+                        overwrote those BIOS tiles in the cartridge S ROM (since 2.5.2); they now sit in an unused area
+                   FIXED waking the screen saver with UP/DOWN still held could move the cursor (auto-repeat)
+                   FIXED the screen-saver delay counted main-loop passes, not frames: it could last a little longer
+                   FIXED building a cartridge with more than 16 MB of samples crashed ("bytes must be in range");
+                        it is now refused cleanly by the capacity check (V-ROM TOO BIG)
+                   IMPROVED the 68000 relay to the Z80 no longer delays the display when the Z80 is well ahead
+                   IMPROVED the capacity check counts the real size of the 68000 program (19 KB) instead of a fixed
+                        64 KB reserve: about 45 KB more P-ROM for music, estimate within 150 bytes of the real image
+                   IMPROVED ngt_studio.py is 13 % lighter: embedded engines compressed with xz, Linux engine without
+                        debug symbols (output identical byte for byte)
+                   IMPROVED scipy is no longer used: the 55.9 -> 48 kHz resampling is done with numpy (same filter,
+                        same values within 1/100 of a 16-bit step, about 4x faster); the Windows version loses ~100 MB
+                   FIXED --wav with --seconds/--start past the end of a track that does not loop crashed after
+                        writing an empty WAV; it now says so and writes nothing
+                   FIXED the jukebox shows game and track numbers on 2 digits: a game with more than 99 tracks (possible
+                        with "keep everything") gave wrong characters; the build is now refused with the game named
+                   FIXED --cart with the same file given twice packed it twice (the interface already ignored it; it
+                        now also recognises the same file reached through another path)
+                   NEW  extraction: at most 99 tracks per game (the jukebox numbers them on 2 digits).  Above that,
+                        SFX, short tracks that do not loop, jingles, then short looping tracks are removed in this
+                        order until it fits (logged); if 99 music tracks still do not suffice, the game is not
+                        written and the result says why.  Below 99 tracks nothing changes (output identical)
+                   FIXED jukebox: the rainbow of the title divided a 32-bit register whose upper half was not cleared:
+                        depending on what was left in it, the colour rotation could freeze or jump
+                   FIXED a .ngt whose track count is corrupted made the program try to allocate gigabytes (MemoryError)
+                        instead of refusing the file (found by fuzzing 1900 corrupted files)
+                   FIXED command line: --track out of range, a missing file or output folder printed a Python traceback;
+                        now a one-line error and exit code 2
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, japan, asia), 2-bank P2, 5 min
+                   screen-saver endurance.
+2.5.13 2026-10-21  Jukebox ROM:
+                   - the yellow note at the top left bounces (1 pixel, ~1.85 beats per second) while the music plays;
+                     it stands still when stopped or paused
+                   - a white note after "NEO GEO JUKEBOX" (erased by the screen saver with the title)
+                   Tested in MAME: MVS + AES, UniBIOS 4.0 and SNK BIOS (euro, us, asia).
+2.5.12 2026-10-20  Review of the engine and of the jukebox code:
+                   - Windows: the engine now handles any character in paths (Unicode).  A Windows account name with
+                     letters outside the system code page (e.g. Cyrillic on a French Windows) made extraction and
+                     playback fail completely
+                   - engine: the V-ROM is no longer copied for every command: about 3x less memory per engine process
+                     (16 MB V-ROM: 68 -> 20 MB, x the number of processes); output unchanged, byte for byte
+                   - jukebox Z80 driver: "silence" reset the ADPCM-B voice with its START bit (0x80) instead of RESET
+                     (0x01), restarting the last sample for an instant at each stop (inaudible in MAME)
+2.5.11 2026-10-20  Fixes found by a full code review:
+                   - extraction: an engine that hangs on one command no longer aborts the whole game (time-out caught)
+                   - extraction: an engine error on a previous game is no longer reported for the next one
+                   - engine output read with a tolerant decoder (Windows code page)
+                   - Cartridge tab: "Build" is disabled as soon as the selection changes (no build of the previous one)
+                   - command line: --cli without --src (or with a missing path) and --stems out of range give a clear
+                     message; --cli without --out writes to ngt_output next to the program
+                   - oscilloscope view: a voice that fails to render no longer blocks the others
+2.5.10 2026-10-20  Fixes found by code review:
+                   - merged MAME sets (clones in sub-folders of the zip): only the parent's M1 / V-ROM are used (the
+                     clones' V-ROMs were appended and shifted every sample address)
+                   - duplicate detection: two tracks with the same notes but clearly different lengths are kept
+                     (Magician Lord: an 11.7 s jingle and a 23.5 s tune were merged)
+                   - sample-based music: sample length capped at the end of the track (measure was too generous)
+                   - neogeo.zip search: a remembered ROM folder that no longer exists is looked at as a folder
+2.5.9  2026-10-20  Extraction:
+                   - loop detection for music made of long ADPCM samples (Pulstar...), checked on the audio
+                   - duplicates recognised by their note sequence (pitch, sample, SSG notes; the loop of a tune with a
+                     sound effect on top counts as the same tune): Crossed Swords 75 -> 32 tracks
+                   - separate ADPCM-B ROMs recognised by their content (CRC from the MAME list), whatever the file name
+                   - temporary folders left by an interrupted extraction are cleaned up (they could fill the disk)
+                   Code clean-up (unused variables / imports).
+2.5.8  2026-10-19  Extraction: music played with long ADPCM samples instead of FM notes (Pulstar, Breakers Revenge
+                   and other Aicom / Visco games) is recognised as music; it was classified as SFX and skipped.
+                   Jukebox ROM: on MVS, inserting a coin no longer restarts the jukebox (the BIOS calls the game again
+                   in "title" mode: playback now simply continues).  The ROM % shown top right is now
+                   (P-ROM + V-ROM used) / (P-ROM + V-ROM of the chosen format, standard or extended); also shown in
+                   the Cartridge tab.  Tested in MAME on MVS (euro, US, japan, UniBIOS 4.0) and AES (asia, japan,
+                   UniBIOS 4.0) BIOSes: START, SELECT, coins, every button, screen saver, random presses.
+2.5.7  2026-10-19  Jukebox ROM: fixed the crash ("ILLEGAL INSTRUCTION at 00000128") when START is pressed on an AES / with
+                   UniBIOS: the assembler had shortened the first jump of the cartridge header, shifting the BIOS
+                   callbacks (PLAYER_START, DEMO_END, COIN_SOUND); they are now fixed 6-byte jumps to a plain return.
+                   Cartridge tab: old .ngt files show the full game title instead of the MAME short name.
+2.5.6  2026-10-19  Cartridge tab: progress bar for the stream compression with the estimated time left; the stream
+                   compression runs in the native engine (about 25x faster, byte-identical result; Python fallback);
+                   a change of selection cancels the computation in progress; "Build" is disabled until it is done.
+                   Command line --cart: same progress with time left.
+2.5.5  2026-10-19  Jukebox ROM screen saver: after 15 minutes without touching the pad, every colour drops to 50 %
+                   (background included), the fixed title is hidden and a rainbow "NEO GEO" bounces off the screen
+                   edges (one cell every 8 frames); the player display is frozen meanwhile, the music keeps playing.
+                   Any press (D-pad or button) wakes it up and does nothing else.
+2.5.4  2026-10-19  Extraction: early games now work (Magician Lord and other first-generation sets): the Z80 sound banks
+                   start mapped like on the hardware (the driver jumped into a banked area before setting it up), and
+                   separate ADPCM-B ROMs (v1x = ADPCM-A, v2x = ADPCM-B) are supported, merged into one V-ROM.
+                   Short tracks: under 45 s (one loop included, adjustable, 0 = off) they are skipped by default and a
+                   question is asked during the extraction, telling how many of them loop (game music with a short
+                   loop); answer once for the whole extraction; no answer within 30 s = skipped.
+                   CLI: --min-len, --short ask|skip|loops|keep.
+                   Jukebox ROM: the 7 small VU meters, the panel frame and AUTO/LOOP moved away from the right edge
+                   (column 38 was hidden by the bezel of some TVs: B meter cut); peak markers fall faster and are not
+                   drawn for a silent voice (they looked like stray white lines).
+2.5.3  2026-10-17  Windows executable (NGT_Studio.exe, everything included, no Python needed): files are read and
+                   written next to the exe, no console window flashing for the engine, command-line options print
+                   into the calling console; a special character can no longer crash console output.
+                   Jukebox ROM: neogeo.zip is looked for automatically next to the program (exe or script) and in the
+                   folder of the last ROM opened in the Extract tab, and checked (security block + font);
+                   if it is missing or unusable, the GUI explains where it looked and asks for it, the command line
+                   asks for its path (or tells you to use --bios when not interactive).
+2.5.2  2026-10-17  Jukebox ROM: back to the 2.5.0 colourful theme (rainbow title, coloured VU meters).
+                   Public source release under the MIT License (engine, 68000 and Z80 jukebox sources, tools).
+2.5.1  2026-10-17  Jukebox ROM: calmer colour theme (night blue + cyan, one amber accent, grey help; title shimmer
+                   instead of rainbow; VU meters cyan -> light cyan -> amber; softened pad button colours).
+2.5.0  2026-10-17  Jukebox ROM redesign: custom fix-layer tiles (icons, smooth pixel-accurate bars, Neo Geo pad buttons
+                   in their real colours, frame); "now playing" panel with smooth progress bar; yellow selection bar;
+                   smooth VU meters with green-yellow-red zones and peak hold; rainbow wave title; scrolling
+                   NOW PLAYING marquee; CRT-safe layout.
+2.4.0  2026-10-17  Jukebox ROM: English interface; plays automatically from power-on and chains every track
+                   (looping tracks: intro + 2 loops, then the next one; SELECT toggles AUTO / LOOP1);
+                   START switches to a full-screen view with 7 giant VU meters and peak hold, every pad function
+                   still working; play time follows the real frame
+                   rate (VBlank); robustness: button presses are never lost, a silent Z80 no longer freezes the
+                   screen, self-resynchronising STOP, empty selection and sub-tick loops refused/handled.
+2.3.0  2026-10-17  Jukebox ROM interface, driven by the pad:
+                   - track list with cursor (UP/DOWN, held = repeat), LEFT/RIGHT game, A play / pause,
+                     B stop, C previous, D next; tracks without a loop chain to the next one (then next game)
+                   - real pause on the Z80 side (notes released, time frozen, SSG volumes restored on resume)
+                   - 7 live VU meters (FM1-4, SSG, ADPCM-A, ADPCM-B) fed by the notes the Z80 actually plays,
+                     rainbow title, progress bar, elapsed / total time, blinking PAUSE
+                   - global ROM occupancy shown top right (P-ROM + V-ROM + M1 used / capacity)
+2.2.0  2026-10-17  Compatibility and cartridge formats.
+                   - old NGT1 files (one per track, NGT Studio 1.x, and the earlier JSON prototype) are read
+                     transparently: the tracks of one game in one folder appear as one game; --upgrade DIR writes
+                     real NGT2 files (originals kept). NGT2 files from every released version are read unchanged.
+                   - jukebox ROM exported directly for Darksoft (folder prom/srom/m1rom/vroma0/crom0/fpga) and
+                     NeoSD (.neo), besides the MAME set
+                   - ADPCM-A samples never cross a 1 MB boundary in the cartridge V-ROM (YM2610 hardware limit
+                     that MAME/ymfm do not reproduce)
+2.1.0  2026-10-17  Jukebox ROM (Cartridge tab, --cart): builds a playable Neo Geo jukebox cartridge.
+                   - YM2610 streams compressed (LZSS, 32 KB window, decompressed by the 68000): about 5-7x smaller
+                   - evaluation before building with a 5 % margin under each limit; the build is refused above it
+                   - standard format P1 1 MB + P2 4 MB / V-ROM 16 MB (largest unprotected official layout) or
+                     extended P2 8 MB (3-bit bank, homebrew only) with bank markers checked by the jukebox at boot
+                   - output: MAME set + software list (mame neogeo ngjb -hashpath hash -rompath .)
+                   Verified in MAME only (bytes received by the Z80, audio vs reference, P2 bank change mid-song).
+2.0.1  2026-10-17  Note decoding: FM pitch now accounts for operator MUL (a x0.5 operator sounds an octave lower).
+                   Checked against the rendered audio on 3 games: 517/520 FM notes exact; SSG exact on the measurable notes.
+2.0.0  2026-10-17  Listening & visual features driven by the YM2610 registers:
+                   - live mixer: click a voice = mute, right-click = solo; re-rendered and swapped in without restarting
+                   - live piano keyboard (notes decoded from FM F-number/block and SSG tone periods)
+                   - album listening: "Loops" = endless, or N loops + 8 s fade-out (works with Next track at end)
+                   - full-screen views (V): pictures + spectrum in the game's own colour · per-voice oscilloscopes ·
+                     piano-roll waterfall with ADPCM drum pads and a stereo stage (real panning bits)
+                   - "Album / stems…": whole game as a tagged FLAC/WAV album, or one track split per voice
+                     (stems add up to the mix); CLI --album / --stems / --format / --loops
+                   - "⛶ Visuals" button
+1.7.0  2026-10-12  Optimisation: playback preparation ~3x faster (periodic edge context instead of 3 loop copies, float32), prepared
+                   tracks cached + next track prefetched in the background (instant next / auto-next), volume-mode changes
+                   instant, libretro index cached for 7 days.
+1.6.0  2026-10-12  Double-click the screenshot: full-screen on black with the spectrum and the 14 voices drawn semi-transparent
+                   over the picture; double-click (or Esc) to come back. Space = play/pause, Left/Right = previous/next.
+1.5.0  2026-10-12  ROM short names are decoded into full titles (built-in table, then Arcade Database, cached in
+                   ~/.ngt_studio_names.json) in the Player list and at extraction; screenshots looked up by ROM name
+                   (clones use their parent), + Arcade Database in-game/title images.
+1.4.3  2026-10-12  Built-in table of ~190 Neo Geo MAME names -> titles (needed to find screenshots and nicer game names).
+1.4.2  2026-10-12  Screenshots now come from thumbnails.libretro.com (no key, no API, no GitHub): Neo Geo + Neo Geo CD sets,
+                   snaps + title screens, title matching on alternative names.
+1.4.1  2026-10-12  --probe-pics: tests the screenshot sources (libretro, Google Images HTML) from the user's machine.
+1.4.0  2026-10-12  Player: square screenshot slideshow right of the graphs (libretro-thumbnails, temp cache deleted at exit,
+                   own images from ./pictures). Needs Pillow (auto-installed). "Screenshots" checkbox.
+1.3.1  2026-10-12  "Next track at end" and "Auto-loop" are mutually exclusive (Auto-loop is forced off and locked while Next is ticked).
+1.3.0  2026-10-12  Settings saved to ~/.ngt_studio.json: window size/position, maximised/full screen (F11), last tab, last
+                   Player folder (reopened at start), Extract options, Cartridge limits and file list.
+1.2.0  2026-10-12  Player: folders load instantly (CRC check in background), Auto-loop and Next-track-at-end options,
+                   working previous/next across games, elapsed time while computing, ngt_studio.log diagnostics,
+                   engine timeout, old m1render_*.exe cleanup, scipy/engine warm-up. Version display.
+1.1.0  2026-10-11  Full English interface.
+1.0.x  2026-10     Extraction (embedded m1render engine), player tab, cartridge tab, --selftest, Windows JSON path fix.
