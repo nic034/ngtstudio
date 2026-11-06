@@ -20,11 +20,57 @@ carry your favourite music on a real Neo Geo.
 
 ## Features
 
-- **Extract**: finds the music in a romset, detects loops and duplicates, cuts trailing silence, keeps short looping tracks.
-- **Player**: plays albums with an emulated YM2610, VU meters, keyboard and piano roll, game screenshots.
-- **Cartridge**: builds a jukebox ROM (MAME set `ngjb.zip`, Darksoft Multi folder, NeoSD `.neo`) from several albums, with a capacity check.
-- **Jukebox ROM**: pad controls (A play/pause, B stop, C/D previous/next, SELECT AUTO / LOOP / RAND), full-screen VU meters,
-  Amiga-style screen saver after 5 minutes. Works on MVS, AES, original BIOS and UniBIOS.
+### Extract
+
+- Reads a MAME romset (`.zip`) and finds the music, including games whose music uses FM, SSG or long ADPCM samples.
+- Detects loops and removes duplicate tracks (by note sequence, not only by name).
+- Cuts the trailing silence of tracks that do not loop; keeps short looping tracks by default.
+- Asks what to do with short tracks (under 45 s): keep the looping ones, skip them, or keep everything. Command line: `--short`.
+- Up to 99 tracks per game, so the jukebox can number them; the extra tracks are dropped first (SFX, jingles, short tracks).
+- Handles early Neo Geo games, separate ADPCM-A / ADPCM-B ROMs, and merged MAME sets with clones.
+- Exports each game as an `.ngt` file: small, numeric only (no audio is stored, no game code).
+- Exports albums and stems: a whole game as a tagged FLAC or WAV album, or each track split per voice (`--album`, `--stems`).
+
+### Player
+
+- Plays `.ngt` albums with an emulated Z80 and YM2610 (FM, SSG and ADPCM), so the music is rendered from its own data.
+- Live mixer: click a voice to mute it, right-click to solo it. The sound is re-rendered on the fly.
+- Live piano keyboard and piano-roll waterfall, with ADPCM drum pads and a stereo stage.
+- Per-voice oscilloscopes and a full-screen view with the spectrum and game screenshots.
+- Album listening: endless loop, or N loops with a fade-out; "Next track at end" option.
+- Game screenshots and title images from libretro thumbnails, shown as a slideshow (no API key needed).
+- Remembers your window, last folder and options in `~/.ngt_studio.json`.
+
+### Cartridge
+
+- Builds a **playable jukebox ROM** from several albums, with a capacity check and a 5 % safety margin.
+- Output formats: MAME set `ngjb.zip`, Darksoft Multi folder, and NeoSD `.neo`.
+- Standard layout (P1 1 MB, P2 4 MB, V-ROM 16 MB) or an extended 8 MB P2 layout (homebrew only).
+- Music streams are compressed (about 5 to 7 times smaller), decompressed by the 68000 program.
+- Screen-saver pictures can be replaced with your own sheets (`--boxes`).
+
+### Jukebox ROM (what runs on the Neo Geo)
+
+- Pad controls: A play / pause, B stop, C / D previous / next, UP / DOWN track, LEFT / RIGHT game.
+- SELECT cycles **AUTO** (chains every track of every album, endlessly), **LOOP** (repeats one track) and **RAND**
+  (a random track of any album, never twice in a row). MVS has no SELECT, so it stays in AUTO.
+- START opens a full-screen view with seven large VU meters and peak hold.
+- Plays automatically from power-on.
+- **Amiga-style screen saver** after 5 minutes without a press: a rainbow sine scroll that reacts to the music,
+  a rippling isometric checkerboard, a spinning CD icon, drifting objects and a point sphere that bounces across the bottom of the screen.
+  Any press wakes it up. The player animations stop while it is on and resume on wake-up.
+- Works on MVS and AES, with the original BIOS and UniBIOS 4.0 (tested in MAME with several BIOS versions).
+- Hardware limits are checked in MAME: sprites per line and the vertical blank.
+
+## Changelog highlights
+
+The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
+
+- **2.5.25**: fixed the bouncing sphere overlapping the bottom text.
+- **2.5.24**: the sphere bounces across the bottom of the screen while it spins.
+- **2.5.22**: spinning CD icon in the screen saver.
+- **2.5.19**: RAND mode; screen saver after 5 minutes; fixed ADPCM-A sample lengths (Puzzle De Pon).
+- **2.5.20**: fixed random coloured dots on a real console (palettes written only during the vertical blank).
 
 ## Quick start
 
