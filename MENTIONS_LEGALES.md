@@ -1,7 +1,5 @@
 # Mentions légales
 
-*Résumé en anglais en bas de page / English summary at the bottom.*
-
 Ces mentions concernent le dépôt GitHub **nic034/ngtstudio** et le logiciel **NGT Studio** qui y est publié
 (article 6 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique).
 
@@ -82,21 +80,3 @@ et l'éditeur ne peut être tenu responsable d'un dommage causé à une console,
 
 Les présentes mentions et l'utilisation de ce dépôt sont soumises au droit français, sous réserve des dispositions impératives
 applicables à l'utilisateur dans son pays de résidence.
-
----
-
-## English summary
-
-- **Publisher**: Nicolas, alias Nic034, a personal, free project. Contact through an issue on <https://github.com/nic034/ngtstudio/issues>
-  or the GitHub profile <https://github.com/nic034>. **Host**: GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA.
-- **Licence**: code under the MIT License. Not covered: SNK artwork, the author's own artwork, games, BIOS, music, third-party
-  components (see [`NOTICE.md`](NOTICE.md)).
-- **No game, BIOS, music or screenshot is distributed.** Bring your own `neogeo.zip` and romsets.
-- **SNK and game publishers**: Neo Geo, SNK, the BIOS and every game, title, character, logo, artwork, music and sound belong to SNK Corporation
-  (formerly SNK Playmore) or to the respective publishers, developers and composers; the MIT License gives no right over them. NGT Studio is an
-  independent fan project, **not affiliated with, endorsed or sponsored by** SNK, any game publisher or developer, MAME, Darksoft, NeoSD, Yamaha,
-  libretro or Arcade Database. Albums and built ROMs are for **personal use only**: do not distribute, publish or sell them; this project grants
-  no right to do so. You are responsible for complying with the law of your country. Rights holders: contact the publisher for prompt removal.
-- **Privacy**: no personal data is collected and nothing is sent to the author. Optional network requests: PyPI at first launch,
-  `thumbnails.libretro.com` and `adb.arcadeitalia.net` while the player runs. Local files: two caches, a diagnostic log, a temporary folder.
-- **Warranty**: provided "as is"; not verified on every real console or flash cartridge, use at your own risk.
