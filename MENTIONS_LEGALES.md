@@ -23,26 +23,40 @@ Le dépôt est hébergé par **GitHub, Inc.**, 88 Colin P. Kelly Jr. Street, San
 - La licence MIT **ne couvre pas** certains éléments (images intégrées, jeux, BIOS, musiques, composants tiers) : voir [`NOTICE.md`](NOTICE.md).
 - Les bibliothèques tierces gardent leur licence : [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md).
 
-## 4. Marques et absence d'affiliation
+## 4. SNK, éditeurs et développeurs des jeux : droits et absence d'affiliation
 
-Neo Geo et SNK sont des marques de leur titulaire. MAME, Darksoft, NeoSD, Yamaha, YM2610, libretro et Arcade Database sont des
-noms appartenant à leurs propriétaires respectifs, cités uniquement pour indiquer avec quoi NGT Studio fonctionne ou d'où il récupère
-des informations. NGT Studio est un projet de fan indépendant : il n'est **ni affilié, ni approuvé, ni parrainé** par SNK ni par aucun
-de ces ayants droit.
+**Titulaires de droits.** Neo Geo, SNK, le BIOS de la console, les jeux, leurs titres, personnages, logos, graphismes, musiques, sons et
+données sonores sont des œuvres et des marques protégées, qui appartiennent à **SNK Corporation** (anciennement SNK Playmore) pour ce qui
+la concerne, et, pour les autres jeux sortis sur Neo Geo, à **leurs éditeurs, développeurs et compositeurs respectifs** ou à leurs
+ayants droit. NGT Studio ne revendique aucun droit sur ces éléments, et la licence MIT du code **ne donne aucun droit** sur eux.
 
-## 5. Jeux, BIOS et musiques : aucun contenu protégé n'est distribué
+**Absence d'affiliation.** NGT Studio est un projet de fan indépendant. Il n'est **ni affilié, ni approuvé, ni parrainé, ni
+validé** par SNK, par un éditeur ou un développeur de jeu, ni par MAME, Darksoft, NeoSD, Yamaha, libretro ou Arcade Database. Ces noms
+(ainsi que YM2610) appartiennent à leurs propriétaires respectifs et ne sont cités que pour indiquer avec quoi NGT Studio fonctionne ou
+d'où il récupère des informations. Les titres de jeux affichés par le logiciel et les captures d'écran récupérées sur Internet
+appartiennent à leurs titulaires.
 
-- Ce dépôt **ne contient aucun jeu, aucun BIOS et aucune musique** de la Neo Geo. Ils restent la propriété de SNK et des autres
-  ayants droit.
-- L'utilisateur doit disposer de ses **propres** romsets et de son **propre** `neogeo.zip`, obtenus légalement. Il est **seul
-  responsable** de l'usage qu'il fait du logiciel et du respect de la loi applicable dans son pays (droit d'auteur, exceptions de copie
-  privée, protections techniques).
-- Une ROM jukebox construite par le logiciel contient la musique de **vos** romsets et deux petits éléments de **votre** `neogeo.zip`
-  (bloc de sécurité de la cartouche, police du système). **Ne diffusez pas ces ROM construites** : partagez l'outil, pas les ROM.
-- Les fichiers `.ngt` produits ne contiennent que des données numériques pour le YM2610 / Z80 tirées des jeux de l'utilisateur ; ils
-  ne sont pas davantage libres de droits et ne doivent pas être diffusés.
-- Si vous êtes titulaire de droits et estimez qu'un élément de ce dépôt porte atteinte à vos droits, écrivez à l'éditeur (voir 1) : il sera
-  examiné et retiré rapidement si nécessaire.
+**Ce que ce dépôt ne contient pas.** Aucun jeu (ROM), aucun BIOS, aucune musique, aucun fichier audio, aucune capture d'écran et aucun
+code de jeu de la Neo Geo. Les illustrations intégrées qui représentent du matériel ou un jeu SNK (la boîte de jeu et la console de l'économiseur
+d'écran) sont © SNK et ne sont pas sous licence MIT : voir [`NOTICE.md`](NOTICE.md).
+
+**Ce que l'utilisateur doit faire.**
+- Disposer de ses **propres** romsets et de son **propre** `neogeo.zip`, obtenus légalement. NGT Studio n'est pas fait pour pirater et
+  ne fournit aucun moyen de se procurer des jeux ou des BIOS.
+- N'utiliser les albums `.ngt` et les ROM jukebox construites que pour un **usage personnel**. Ces fichiers contiennent des données
+  musicales tirées des jeux (œuvres protégées) et, pour les ROM, deux éléments du BIOS : **ne pas les diffuser, ni les publier, ni les
+  vendre**. Ce projet n'autorise pas la diffusion ni la vente de cartouches ou de fichiers contenant la musique ou le BIOS d'un jeu,
+  et ne donne aucun droit pour le faire.
+- Respecter la loi applicable dans son pays (droit d'auteur, exceptions de copie privée, protections techniques) : il en est **seul
+  responsable**. L'éditeur du logiciel ne donne aucun avis juridique.
+
+**Retrait à la demande.** Si vous êtes titulaire de droits (SNK, éditeur, développeur, compositeur) et estimez qu'un élément de ce dépôt
+porte atteinte à vos droits, écrivez à l'éditeur (voir 1) en indiquant l'élément concerné : il sera examiné et retiré sans délai si
+nécessaire.
+
+## 5. Autres marques
+
+Les autres noms de produits ou de sociétés cités dans ce dépôt (Python, Windows, GitHub, etc.) appartiennent à leurs propriétaires respectifs.
 
 ## 6. Données personnelles et accès réseau
 
@@ -77,9 +91,12 @@ applicables à l'utilisateur dans son pays de résidence.
   or the GitHub profile <https://github.com/nic034>. **Host**: GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA.
 - **Licence**: code under the MIT License. Not covered: SNK artwork, the author's own artwork, games, BIOS, music, third-party
   components (see [`NOTICE.md`](NOTICE.md)).
-- **No game, BIOS or music is distributed.** Bring your own `neogeo.zip` and romsets. Do not distribute the ROMs you build with the tool.
-- **Not affiliated with SNK**, MAME, Darksoft, NeoSD or any game publisher. Neo Geo and SNK are trademarks of their owner.
+- **No game, BIOS, music or screenshot is distributed.** Bring your own `neogeo.zip` and romsets.
+- **SNK and game publishers**: Neo Geo, SNK, the BIOS and every game, title, character, logo, artwork, music and sound belong to SNK Corporation
+  (formerly SNK Playmore) or to the respective publishers, developers and composers; the MIT License gives no right over them. NGT Studio is an
+  independent fan project, **not affiliated with, endorsed or sponsored by** SNK, any game publisher or developer, MAME, Darksoft, NeoSD, Yamaha,
+  libretro or Arcade Database. Albums and built ROMs are for **personal use only**: do not distribute, publish or sell them; this project grants
+  no right to do so. You are responsible for complying with the law of your country. Rights holders: contact the publisher for prompt removal.
 - **Privacy**: no personal data is collected and nothing is sent to the author. Optional network requests: PyPI at first launch,
   `thumbnails.libretro.com` and `adb.arcadeitalia.net` while the player runs. Local files: two caches, a diagnostic log, a temporary folder.
 - **Warranty**: provided "as is"; not verified on every real console or flash cartridge, use at your own risk.
-- **Rights holders**: contact the publisher to have any item reviewed and removed.
