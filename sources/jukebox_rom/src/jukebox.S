@@ -1003,7 +1003,12 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    V_SPHTX, RAM+1112       | vitesse cible axe X (la courante y derive doucement)
         .equ    V_SPHTY, RAM+1114       | vitesse cible axe Y
         .equ    V_SPHDT, RAM+1116       | images avant le prochain tirage d'une nouvelle cible de derive
-        .equ    V_SPHBUF,RAM+1120       | tampon : par point (SPH_N), SCB3-Y/SCB4-X/SCB2-shrink (6 octets)
+        .equ    V_SPHBUF,RAM+1120       | tampon (576 octets) : 3 tableaux de SPH_N mots, SCB3 (Y + hauteur) en +0,
+                                       |   SCB4 (X) en +2 x SPH_N, SCB2 (zoom) en +4 x SPH_N, recopies d'un trait en VRAM
+        .equ    SPH_TCX, RAM+0xC000     | tables de produits de sphere_draw, refaites a chaque image par additions :
+        .equ    SPH_TSX, SPH_TCX+256    |   v x cos/sin(angle X) pour v = -64..63 (128 mots chacune),
+        .equ    SPH_TCY, SPH_TSX+256    |   v x cos/sin(angle Y) pour v = -68..67 (136 mots chacune) ; 1056 octets en
+        .equ    SPH_TSY, SPH_TCY+272    |   tout, RAM libre (au-dela de la fenetre LZSS, sous la pile)
         .equ    SPH_XSPD,  1            | essai balle : vitesse horizontale du centre (px/image) : lente, deplacement
                                        |   lateral naturel
         .equ    SPH_BXMIN, 20           | bornes du deplacement horizontal : la balle reste visible a l'ecran pendant
@@ -2020,7 +2025,13 @@ sphere_bounce:
 | essai : sphere de points, rotation 2 axes (sc_sin existant) + perspective approchee (sans division : voir
 | sph_shrink) + zoom materiel SCB2 selon la profondeur.  Centre de projection anime par sphere_bounce (rebond en
 | bas de l'ecran, glisse vers la droite) pendant que la sphere tourne sur elle-meme.  Appelee par saver_scroll
-| (cd_done) a la place du dessin du texte qui ondule, quand V_SCENE = 1.  Modifie d0-d7, a0-a3.
+| (cd_done) a la place du dessin du texte qui ondule, quand V_SCENE = 1.  Modifie d0-d7, a0-a6 (a6 rendu = LSPC).
+| 2.5.26 : memes resultats a l'octet pres qu'avant, environ deux fois moins de temps.  Les 8 produits de la rotation
+| (v x sinus) viennent de 4 tables refaites a chaque image par additions (plus de muls), les points sont des mots
+| deja doubles (indices directs), plus de pile dans la boucle, et les 3 x 96 mots partent en VRAM en rafales de
+| move.w (a0)+,(a4) (12 cycles entre deux ecritures : le minimum du LSPC, wiki NeoGeoDev, page VRAM).
+| Plages verifiees pour tous les couples d'angles et tous les points : Ym, Zm, Xm -64..63, Z1 -65..64 (tables X :
+| -64..63, tables Y : -68..67), Z2 -66..66 (voir sph_shrink).
 sphere_draw:
         bsr     sphere_step
         bsr     sphere_bounce
@@ -2041,94 +2052,116 @@ sphere_draw:
         and.w   #255,d1
         move.b  (a2,d1.w),d7            | d7 = cos(angle Y)
         ext.w   d7
+        | --- tables de produits : T[v] = v x c, de v = vmin en montant (une multiplication, puis des additions) ---
+        lea     SPH_TCX,a2
+        lea     SPH_TSX,a3
+        moveq   #-64,d0
+        move.w  d0,d1
+        muls.w  d5,d0                   | -64 x cosX
+        muls.w  d4,d1                   | -64 x sinX
+        moveq   #128/8-1,d2
+10:     .rept   8
+        move.w  d0,(a2)+
+        move.w  d1,(a3)+
+        add.w   d5,d0
+        add.w   d4,d1
+        .endr
+        dbra    d2,10b
+        lea     SPH_TCY,a2
+        lea     SPH_TSY,a3
+        moveq   #-68,d0
+        move.w  d0,d1
+        muls.w  d7,d0                   | -68 x cosY
+        muls.w  d6,d1                   | -68 x sinY
+        moveq   #136/8-1,d2
+11:     .rept   8
+        move.w  d0,(a2)+
+        move.w  d1,(a3)+
+        add.w   d7,d0
+        add.w   d6,d1
+        .endr
+        dbra    d2,11b
+        lea     SPH_TCX+2*64,a2         | pointeurs sur v = 0 : indice = 2 v (signe)
+        lea     SPH_TSX+2*64,a3
+        lea     SPH_TCY+2*68,a4
+        lea     SPH_TSY+2*68,a5
+        lea     sph_shrink+2*64,a6      | zoom de Z2 : (a6, 2 x Z2)
+        move.w  V_SPHBX,d4              | centre X (sphere_bounce)
+        move.w  #496,d5                 | 496 - centre Y : SCB3 = (d5 - y) << 7
+        sub.w   V_SPHBYI,d5
         lea     sph_pts,a0
-        lea     sph_pts+3*SPH_N,a3      | borne de fin
         lea     V_SPHBUF,a1
-        lea     sph_shrink,a2           | a2 libere du sinus, reutilise pour la table de zoom
-1:      move.b  (a0)+,d0
-        ext.w   d0                      | d0 = Xm
-        move.b  (a0)+,d1
-        ext.w   d1                      | d1 = Ym
-        move.b  (a0)+,d2
-        ext.w   d2                      | d2 = Zm
+        moveq   #SPH_N-1,d6
+1:      move.w  (a0)+,d0                | d0 = 2 Xm
+        move.w  (a0)+,d1                | d1 = 2 Ym
+        move.w  (a0)+,d2                | d2 = 2 Zm
         | --- rotation axe X : Y1 = (Ym cosX - Zm sinX) >> 6 ; Z1 = (Ym sinX + Zm cosX) >> 6 ---
-        move.w  d1,d3                   | d3 = Ym (copie, pour le second produit)
-        muls.w  d5,d1                   | d1 = Ym x cosX
-        move.w  d2,-(sp)                | garde Zm
-        muls.w  d4,d2                   | d2 = Zm x sinX
-        sub.w   d2,d1
-        asr.w   #6,d1                   | d1 = Y1 (final : l'axe Y n'est pas touche par la rotation sur Y ensuite)
-        move.w  (sp)+,d2                | d2 = Zm
-        muls.w  d4,d3                   | d3 = Ym x sinX
-        muls.w  d5,d2                   | d2 = Zm x cosX
-        add.w   d3,d2
-        asr.w   #6,d2                   | d2 = Z1
+        move.w  (a2,d1.w),d3
+        sub.w   (a3,d2.w),d3
+        asr.w   #6,d3                   | d3 = Y1 (final)
+        move.w  (a3,d1.w),d1
+        add.w   (a2,d2.w),d1
+        asr.w   #6,d1                   | d1 = Z1
+        add.w   d1,d1                   | 2 Z1
         | --- rotation axe Y : X2 = (Xm cosY + Z1 sinY) >> 6 ; Z2 = (Z1 cosY - Xm sinY) >> 6 ---
-        move.w  d0,d3                   | d3 = Xm (copie)
-        muls.w  d7,d0                   | d0 = Xm x cosY
-        move.w  d2,-(sp)                | garde Z1
-        muls.w  d6,d2                   | d2 = Z1 x sinY
-        add.w   d2,d0
-        asr.w   #6,d0                   | d0 = X2 (final)
-        move.w  (sp)+,d2                | d2 = Z1
-        muls.w  d6,d3                   | d3 = Xm x sinY
-        muls.w  d7,d2                   | d2 = Z1 x cosY
-        sub.w   d3,d2
-        asr.w   #6,d2                   | d2 = Z2 (final, profondeur)
-        | --- perspective approchee (sans division) : s = Z2 + 192 (128..256), x3/2 pour un rayon ecran d'environ 96 px
-        |   (essai : un peu plus grande qu'avant, x5/4 -> x3/2 ; seul ce facteur d'echelle ecran change, le reste du
-        |   pipeline -Z2, table de zoom sph_shrink- garde son domaine -64..63 d'origine) ---
-        move.w  d2,d3                   | d3 = Z2, garde pour l'indice de la table de zoom
-        add.w   #192,d2                 | d2 = s
-        muls.w  d2,d0                   | d0 = X2 x s
-        asr.w   #8,d0
-        move.w  d0,-(sp)
+        move.w  (a4,d0.w),d2
+        add.w   (a5,d1.w),d2
+        asr.w   #6,d2                   | d2 = X2 (final)
+        move.w  (a4,d1.w),d1
+        sub.w   (a5,d0.w),d1
+        asr.w   #6,d1                   | d1 = Z2 (profondeur)
+        | --- zoom materiel (table par Z2) ---
+        move.w  d1,d0
+        add.w   d0,d0
+        move.w  (a6,d0.w),4*SPH_N(a1)   | SCB2
+        | --- perspective approchee (sans division) : s = Z2 + 192 (128..256), puis x 3/2 (rayon ecran ~96 px) ---
+        add.w   #192,d1                 | d1 = s
+        muls.w  d1,d2                   | X2 x s
+        asr.w   #8,d2
+        move.w  d2,d0
         asr.w   #1,d0
-        add.w   (sp)+,d0
-        add.w   V_SPHBX,d0              | d0 = X ecran (centre anime par sphere_bounce, glisse vers la droite)
-        muls.w  d2,d1                   | d1 = Y1 x s
-        asr.w   #8,d1
-        move.w  d1,-(sp)
-        asr.w   #1,d1
-        add.w   (sp)+,d1
-        add.w   V_SPHBYI,d1             | d1 = Y ecran (centre anime par sphere_bounce, rebondit sur le sol)
-        | --- zoom materiel (table par Z2) puis ecriture dans le tampon ---
-        move.w  d3,d2
-        add.w   #64,d2
-        add.w   d2,d2
-        move.w  (a2,d2.w),d2
-        move.w  d2,4(a1)                | shrink (SCB2)
-        move.w  d0,d2
+        add.w   d0,d2
+        add.w   d4,d2                   | X ecran
         lsl.w   #7,d2
-        move.w  d2,2(a1)                | X (SCB4)
-        move.w  #496,d2
-        sub.w   d1,d2
-        and.w   #0x1FF,d2
-        lsl.w   #7,d2
-        addq.w  #1,d2                   | hauteur = 1 tuile
-        move.w  d2,(a1)                 | Y (SCB3)
-        lea     6(a1),a1
-        cmpa.l  a3,a0
-        bcs     1b
-        | --- ecriture VRAM en 3 passages contigus (comme le damier), depuis le tampon ---
+        move.w  d2,2*SPH_N(a1)          | SCB4
+        muls.w  d1,d3                   | Y1 x s
+        asr.w   #8,d3
+        move.w  d3,d0
+        asr.w   #1,d0
+        add.w   d0,d3
+        move.w  d5,d0
+        sub.w   d3,d0                   | 496 - Y ecran
+        lsl.w   #7,d0                   | (masque des 9 bits implicite : le reste sort du mot)
+        addq.w  #1,d0                   | hauteur = 1 tuile
+        move.w  d0,(a1)+                | SCB3
+        dbra    d6,1b
+        | --- ecriture VRAM : 3 passages contigus depuis les 3 tableaux ---
+        .if     SPH_N % 8
+        .error  "SPH_N doit etre multiple de 8"
+        .endif
+        lea     LSPC,a6
+        lea     2(a6),a4                | port de donnees VRAM
         move.w  #1,4(a6)
-        move.w  #0x8000+SPH0,(a6)       | SCB2 : shrink
-        lea     V_SPHBUF+4,a0
-        moveq   #SPH_N-1,d0
-2:      move.w  (a0),2(a6)
-        lea     6(a0),a0
+        move.w  #0x8000+SPH0,(a6)       | SCB2 : zoom
+        lea     V_SPHBUF+4*SPH_N,a0
+        moveq   #SPH_N/8-1,d0
+2:      .rept   8
+        move.w  (a0)+,(a4)
+        .endr
         dbra    d0,2b
         move.w  #0x8200+SPH0,(a6)       | SCB3 : Y + hauteur
         lea     V_SPHBUF,a0
-        moveq   #SPH_N-1,d0
-3:      move.w  (a0),2(a6)
-        lea     6(a0),a0
+        moveq   #SPH_N/8-1,d0
+3:      .rept   8
+        move.w  (a0)+,(a4)
+        .endr
         dbra    d0,3b
         move.w  #0x8400+SPH0,(a6)       | SCB4 : X
-        lea     V_SPHBUF+2,a0
-        moveq   #SPH_N-1,d0
-4:      move.w  (a0),2(a6)
-        lea     6(a0),a0
+        lea     V_SPHBUF+2*SPH_N,a0
+        moveq   #SPH_N/8-1,d0
+4:      .rept   8
+        move.w  (a0)+,(a4)
+        .endr
         dbra    d0,4b
         rts
 
@@ -2438,104 +2471,109 @@ sc_sin:
         .balign 2
 
 | --- essai : sphere de points (tools/gen_sphere.py), remplace le texte qui ondule par phases de 60 s ---
-sph_pts:                               | 96 points (X,Y,Z), -64..63, coherent avec sc_sin (meme amplitude)
-        .byte   0, 63, 0
-        .byte   -10, 63, 9
-        .byte   2, 61, -18
-        .byte   14, 60, 18
-        .byte   -25, 59, -4
-        .byte   24, 57, -15
-        .byte   -8, 56, 30
-        .byte   -15, 55, -30
-        .byte   33, 53, 12
-        .byte   -35, 52, 14
-        .byte   17, 51, -36
-        .byte   12, 49, 39
-        .byte   -37, 48, -21
-        .byte   43, 46, -9
-        .byte   -26, 45, 37
-        .byte   -6, 44, -46
-        .byte   37, 42, 31
-        .byte   -49, 41, 2
-        .byte   36, 40, -35
-        .byte   -2, 38, 51
-        .byte   -33, 37, -40
-        .byte   53, 36, 7
-        .byte   -44, 34, 31
-        .byte   12, 33, -53
-        .byte   28, 32, 48
-        .byte   -54, 30, -17
-        .byte   52, 29, -24
-        .byte   -22, 28, 53
-        .byte   -20, 26, -55
-        .byte   52, 25, 27
-        .byte   -58, 24, 15
-        .byte   32, 22, -50
-        .byte   10, 21, 60
-        .byte   -48, 20, -37
-        .byte   61, 18, -5
-        .byte   -42, 17, 45
-        .byte   0, 15, -62
-        .byte   42, 14, 46
-        .byte   -62, 13, -6
-        .byte   50, 11, -38
-        .byte   -11, 10, 62
-        .byte   -34, 9, -54
-        .byte   61, 7, 17
-        .byte   -57, 6, 29
-        .byte   22, 5, -60
-        .byte   24, 3, 59
-        .byte   -58, 2, -27
-        .byte   61, 1, -19
-        .byte   -32, -1, 55
-        .byte   -13, -2, -63
-        .byte   52, -3, 37
-        .byte   -63, -5, 8
-        .byte   41, -6, -49
-        .byte   2, -7, 63
-        .byte   -44, -9, -45
-        .byte   63, -10, 3
-        .byte   -49, -11, 40
-        .byte   9, -13, -62
-        .byte   35, -14, 51
-        .byte   -61, -15, -14
-        .byte   54, -17, -30
-        .byte   -19, -18, 58
-        .byte   -25, -20, -55
-        .byte   56, -21, 24
-        .byte   -57, -22, 20
-        .byte   28, -24, -53
-        .byte   15, -25, 57
-        .byte   -49, -26, -32
-        .byte   57, -28, -10
-        .byte   -35, -29, 45
-        .byte   -4, -30, -56
-        .byte   41, -32, 38
-        .byte   -55, -33, -1
-        .byte   40, -34, -36
-        .byte   -5, -36, 53
-        .byte   -31, -37, -42
-        .byte   50, -38, 9
-        .byte   -43, -40, 27
-        .byte   13, -41, -47
-        .byte   22, -42, 43
-        .byte   -44, -44, -16
-        .byte   42, -45, -17
-        .byte   -19, -46, 40
-        .byte   -12, -48, -41
-        .byte   35, -49, 21
-        .byte   -38, -51, 8
-        .byte   22, -52, -30
-        .byte   4, -53, 35
-        .byte   -25, -55, -22
-        .byte   31, -56, -1
-        .byte   -20, -57, 20
-        .byte   1, -59, -26
-        .byte   14, -60, 17
-        .byte   -18, -61, -3
-        .byte   11, -63, -7
-        .byte   0, -64, 0
+.macro  SPT x, y, z
+        .word   2*(\x), 2*(\y), 2*(\z)
+        .endm
+sph_pts:                               | 96 points (X,Y,Z), -64..63, coherent avec sc_sin (meme amplitude) ;
+                                       |   ranges en mots DOUBLES (2.5.26 : indices directs des tables de sphere_draw)
+        SPT     0, 63, 0
+        SPT     -10, 63, 9
+        SPT     2, 61, -18
+        SPT     14, 60, 18
+        SPT     -25, 59, -4
+        SPT     24, 57, -15
+        SPT     -8, 56, 30
+        SPT     -15, 55, -30
+        SPT     33, 53, 12
+        SPT     -35, 52, 14
+        SPT     17, 51, -36
+        SPT     12, 49, 39
+        SPT     -37, 48, -21
+        SPT     43, 46, -9
+        SPT     -26, 45, 37
+        SPT     -6, 44, -46
+        SPT     37, 42, 31
+        SPT     -49, 41, 2
+        SPT     36, 40, -35
+        SPT     -2, 38, 51
+        SPT     -33, 37, -40
+        SPT     53, 36, 7
+        SPT     -44, 34, 31
+        SPT     12, 33, -53
+        SPT     28, 32, 48
+        SPT     -54, 30, -17
+        SPT     52, 29, -24
+        SPT     -22, 28, 53
+        SPT     -20, 26, -55
+        SPT     52, 25, 27
+        SPT     -58, 24, 15
+        SPT     32, 22, -50
+        SPT     10, 21, 60
+        SPT     -48, 20, -37
+        SPT     61, 18, -5
+        SPT     -42, 17, 45
+        SPT     0, 15, -62
+        SPT     42, 14, 46
+        SPT     -62, 13, -6
+        SPT     50, 11, -38
+        SPT     -11, 10, 62
+        SPT     -34, 9, -54
+        SPT     61, 7, 17
+        SPT     -57, 6, 29
+        SPT     22, 5, -60
+        SPT     24, 3, 59
+        SPT     -58, 2, -27
+        SPT     61, 1, -19
+        SPT     -32, -1, 55
+        SPT     -13, -2, -63
+        SPT     52, -3, 37
+        SPT     -63, -5, 8
+        SPT     41, -6, -49
+        SPT     2, -7, 63
+        SPT     -44, -9, -45
+        SPT     63, -10, 3
+        SPT     -49, -11, 40
+        SPT     9, -13, -62
+        SPT     35, -14, 51
+        SPT     -61, -15, -14
+        SPT     54, -17, -30
+        SPT     -19, -18, 58
+        SPT     -25, -20, -55
+        SPT     56, -21, 24
+        SPT     -57, -22, 20
+        SPT     28, -24, -53
+        SPT     15, -25, 57
+        SPT     -49, -26, -32
+        SPT     57, -28, -10
+        SPT     -35, -29, 45
+        SPT     -4, -30, -56
+        SPT     41, -32, 38
+        SPT     -55, -33, -1
+        SPT     40, -34, -36
+        SPT     -5, -36, 53
+        SPT     -31, -37, -42
+        SPT     50, -38, 9
+        SPT     -43, -40, 27
+        SPT     13, -41, -47
+        SPT     22, -42, 43
+        SPT     -44, -44, -16
+        SPT     42, -45, -17
+        SPT     -19, -46, 40
+        SPT     -12, -48, -41
+        SPT     35, -49, 21
+        SPT     -38, -51, 8
+        SPT     22, -52, -30
+        SPT     4, -53, 35
+        SPT     -25, -55, -22
+        SPT     31, -56, -1
+        SPT     -20, -57, 20
+        SPT     1, -59, -26
+        SPT     14, -60, 17
+        SPT     -18, -61, -3
+        SPT     11, -63, -7
+        SPT     0, -64, 0
         .balign 2
+        .word   0xF900, 0xC000          | Z2 = -66, -65 (etape A : octets identiques a la 2.5.25)
 sph_shrink:                             | SCB2 par Z'' (-64..63) : bits0-7 Y-shrink, bits8-11 X-shrink
         .word   0x0559, 0x055B, 0x055C, 0x055D, 0x065E, 0x0660, 0x0661, 0x0662
         .word   0x0664, 0x0665, 0x0666, 0x0667, 0x0669, 0x066A, 0x066B, 0x066D
@@ -2553,6 +2591,7 @@ sph_shrink:                             | SCB2 par Z'' (-64..63) : bits0-7 Y-shr
         .word   0x0DE0, 0x0DE1, 0x0DE3, 0x0DE4, 0x0DE5, 0x0EE6, 0x0EE8, 0x0EE9
         .word   0x0EEA, 0x0EEC, 0x0EED, 0x0EEE, 0x0EEF, 0x0EF1, 0x0EF2, 0x0EF3
         .word   0x0EF5, 0x0EF6, 0x0FF7, 0x0FF9, 0x0FFA, 0x0FFB, 0x0FFC, 0x0FFE
+        .word   0x41F9, 0x0040, 0x0000  | Z2 = 64, 65, 66 (etape A : octets identiques a la 2.5.25)
 | --- fin des tables generees ---
 
 | d7 = 0 : couleurs normales ; 1 : couleurs a 50 % (sauf la couleur 1 des palettes 10..15 : logo vif)
