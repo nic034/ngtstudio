@@ -66,6 +66,7 @@ carry your favourite music on a real Neo Geo.
 
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
+- **2.5.26**: optional "Aurelien - Toasty" easter egg in the screen saver (`--toasty`).
 - **2.5.25**: fixed the bouncing sphere overlapping the bottom text.
 - **2.5.24**: the sphere bounces across the bottom of the screen while it spins.
 - **2.5.22**: spinning CD icon in the screen saver.
@@ -107,7 +108,7 @@ Full documentation (options, formats, controls, screen saver, rebuilding the ROM
 
 - The jukebox cartridge was tested **in MAME** (7 BIOS: MVS and AES, original and UniBIOS) and boots and plays on a
   Darksoft Multi-AES (UniBIOS 4.0). It has **not** been verified on every real hardware / flash cartridge: use it at your own risk.
-- Latest version: **2.5.25**. Version history: [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt) (short version: [`sources/CHANGES.txt`](sources/CHANGES.txt)).
+- Latest version: **2.5.26**. Version history: [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt) (short version: [`sources/CHANGES.txt`](sources/CHANGES.txt)).
 
 ## License and legal
 

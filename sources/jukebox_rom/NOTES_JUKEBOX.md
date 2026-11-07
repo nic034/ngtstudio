@@ -1,4 +1,4 @@
-# Notes techniques : cartouche jukebox Neo Geo (NGT Studio 2.5.21, 26/10/2026)
+# Notes techniques : cartouche jukebox Neo Geo (NGT Studio 2.5.21, 26/10/2026 ; section Toasty : 2.5.26, 07/11/2026)
 
 Ces notes décrivent l'état réel de la version 2.5.21 (2.5.21 : planches des deux puces retirées, 4 planches intégrées ; 2.5.20 : palettes écrites seulement dans le retour de trame ; 2.5.19 : mode RAND, économiseur à 5 min, animations de l'interface arrêtées pendant l'économiseur, 6 planches d'objets ; 2.5.18 : ondulation du damier plus ample, liée à la musique ; 2.5.17 : planches des objets intégrées, sortie MAME seule corrigée ; 2.5.16 : set MAME en zip `ngjb.zip` ; 2.5.15 : console isolée sur ses lignes, densité 2 à 8, 93 sprites par ligne au pire ; 2.5.14 : économiseur sine scroll + damier + infos + objets animés (planches fournies par l'utilisateur), animé par l'interruption VBlank, notes de l'en-tête animées sur 2 pixels, tuiles maison déplacées en 0xC00 ; 2.5.12 : remise à zéro ADPCM-B du driver Z80 corrigée). Le constructeur se trouve dans `ngt_studio.py` (fonctions
 `jukebox_pack`, `evaluate_cart`, `layout_prom`, `build_cart`). Les sources du programme 68000 et du driver Z80
@@ -265,6 +265,51 @@ ci-dessous (amplitude minimale, espacement des objets).
   appui consommé, pièce MVS) : 12/12 MVS euro/us/japan/unibios40, 11/11 AES asia/japan/unibios40 ; `full_test.lua`
   40/40 MVS, 38/38 AES ; endurance 5 min ; fuzz 6 min (4 configurations) ; sans planche et avec une seule planche
   (large) ; `saver_perline.lua` (sprites par ligne), `saver_irqcost.lua` (coût de l'interruption), `saver_flux.lua`, `saver_cover.lua` (couverture du damier).
+
+## Toasty « Aurelien - Toasty » (2.5.26, option du constructeur ; `core.S` : toasty_init / toasty_alb / toasty_time / toasty_setup / toasty_vbl / toasty_hide)
+
+- **Option** : case de l'onglet Cartridge (réglage `cart_toasty`), `--toasty` en ligne de commande, `TOASTY=1` pour
+  `tools/tbuild.py`. Décochée : le bloc `toastydata` (360 octets, `JB_TOASTY_OFF`) reste à zéro, aucune tuile ;
+  `toasty_init` met alors `V_TOST` = 3 au démarrage et rien ne se déclenche.
+- **Quand** : une seule fois par mise sous tension (requête 2 ; la reprise MVS par une pièce ne réarme pas), au premier de :
+  - début d'une piste du 3e album de la liste (jeu 2) en venant d'un autre album (`toasty_alb`, appelé par `play`
+    avant `move.w d0,V_PG`) : passage AUTO 2 -> 3 ou tirage RAND qui tombe dans l'album 3 ;
+  - 20 min de lecture réelle (`toasty_time`, VBlank : `V_TOPL` compte les images où `V_PLAY` ≠ 0 et hors pause ;
+    `TO_TIME` = 71022 images).
+  - Seulement pendant l'économiseur : déclenché (`V_TOST` = 1), il part quand l'économiseur est affiché depuis
+    `TO_WAIT` = 592 images (10 s, `V_TOSA`). Déclenché hors économiseur, il attend donc le suivant. Un réveil pendant
+    l'animation la masque (`spr_hide` couvre les sprites du Toasty) et la compte comme passée (`toasty_setup`).
+  - `V_TOST` : 0 armé, 1 déclenché, 2 animé, 3 passé / désactivé. RAM+1720..1729 (hors de la remise à zéro des
+    256 premiers octets : initialisée par `toasty_init`).
+- **Image** : une seule (case 8 de la planche fournie : les 16 cases sont la même pose déplacée verticalement, avec de
+  petites différences de dessin aléatoires d'une case à l'autre), `art/toasty_frame.png` -> `tools/pack_toasty.py` ->
+  `JB_TOASTY_B85`. Détourage du fond magenta bruité, réduction à 112 x 94 px (moyenne des seuls pixels du personnage :
+  pas de frange rose), calée en bas d'un bloc de 7 x 6 tuiles. 4 palettes de 15 couleurs (k-means par groupe de tuiles,
+  33..36), chaque tuile prend la plus proche. Colonnes rognées à leur contenu : 1res rangées [4, 1, 0, 0, 0, 3, 4],
+  30 tuiles C-ROM à partir de `JB_TOASTY_TILE0` = 0x3F00 (les objets s'arrêtent avant 0x2500).
+- **Sprites 326..333** (`TO0` = `NALL` + 1, 7 utilisés) : numéros plus grands que tous les autres -> devant tout ;
+  la couche fix est transparente pendant l'économiseur. SCB1/SCB2 posés par `toasty_setup` dans `saver_on` (hors
+  VBlank), colonnes masquées ; X posé une fois au départ ; ensuite seulement 7 SCB3 par image.
+- **Mouvement** : table `to_dy` (dy + 8 par image, 255 = fin), repos `JB_TOASTY_Y` = 132 (haut du bloc ; bas en 228),
+  X `JB_TOASTY_X` = 200 (bord droit en 312) : montée 30 images (ease-out, 2 px de dépassement), tenue 96 images
+  (gorgée de 2 px), descente 24 images ; 150 images, ~2,5 s.
+- **96 sprites par ligne** : mesuré sur la 2.5.25 (6 min, sans Toasty) : 89 au pire en lignes 120-127, 82 en
+  128-135, ≤ 77 plus bas. Le haut du bloc ne monte jamais au-dessus de la ligne 130 (repos 132 − 2) et les colonnes
+  rognées ne mettent que 3 sprites sur les 16 lignes du haut. Mesuré avec le Toasty rejoué sans fin pendant 6 min
+  (20 932 images animées, scènes texte et sphère, objets au plus dense) : **89 au plus, jamais au-delà de 96**.
+- **VBlank** : `toasty_vbl` passe **avant** `saver_scroll` : 2 lignes au plus, ses écritures sont faites au début du
+  retour de trame, même quand `saver_scroll` déborde (ci-dessous).
+- Tests : `mame_tests/toasty_cases.lua` (CASE = album / time / pending / wake / off) et `mame_tests/toasty_stress.lua`.
+
+### Mesure faite en 2.5.26 : la scène sphère déborde du retour de trame (problème antérieur, NON corrigé)
+
+- Mesuré sur la 2.5.25 d'origine (ROM instrumentée : compteur de ligne `$3C0006` relevé avant / après `saver_scroll`,
+  4 min) : scène texte 27,2 lignes en moyenne, 72 au plus (5 images sur 7 617 au-delà de 40) ; **scène sphère
+  144,6 lignes en moyenne, 155 au plus, à chaque image** (retour de trame : 40 lignes, image : 264).
+- Sur une vraie console, cela veut dire : écritures VRAM des points pendant l'affichage (déchirures possibles, que
+  MAME ne montre pas) et plus de la moitié du temps du 68000 prise par l'interruption (relais vers le Z80 à vérifier).
+  Les palettes de l'économiseur sont écrites avant `sphere_draw` (pal_saver, fondu du CD) ; à vérifier aussi.
+- Le texte « Hardware limits are checked in MAME: ... the vertical blank » du README n'est plus vrai depuis la 2.5.24.
 
 ## Pièges Neo Geo rencontrés (toujours valables)
 

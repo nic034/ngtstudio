@@ -18,6 +18,9 @@ The [MIT License](LICENSE) (© 2026 Nicolas (Nic034)) covers **the code written 
      Studio and of the jukebox cartridges it builds for personal use; any other use needs the author's permission.
    - You can replace every built-in picture with your own (`jukebox_boxes.png` … `jukebox_boxes6.png` or `--boxes`); a
      picture you provide stays yours.
+   - the **"Aurelien - Toasty" picture** (`JB_TOASTY_B85`, `sources/jukebox_rom/art/toasty_frame.png`, used only when the
+     Toasty option is ticked) is the portrait of a real person, supplied by the author, **all rights reserved**; it is not
+     licensed under the MIT License and may not be reused outside NGT Studio. The mug shows a Pac-Man design (© Bandai Namco).
 3. **Third-party components**, which keep their own licences, see [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md):
    ymfm (BSD 3-Clause, © Aaron Giles) and the z80 emulator (MIT, © Nicolas Allemand), both compiled into the embedded engine.
    A Windows build you make yourself also bundles Python, Tcl/Tk, numpy, Pillow, sounddevice, soundfile, libsndfile

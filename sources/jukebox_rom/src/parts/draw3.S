@@ -722,8 +722,10 @@ vblank: tst.b   0x10FD80
 6:      tst.w   V_SAVER                | economiseur : animation au tout debut du retour de trame, a chaque image
         beq.s   1f
         lea     LSPC,a6
-        bsr     saver_scroll
-1:      jsr     0xC0044A               | SYSTEM_IO
+        bsr     toasty_vbl             | Toasty : attente / animation, en premier (1 a 2 lignes) : ses positions sont posees
+        bsr     saver_scroll           |   au debut du retour de trame, meme quand saver_scroll deborde (scene sphere)
+1:      bsr     toasty_time            | Toasty : temps de lecture (20 min)
+        jsr     0xC0044A               | SYSTEM_IO
         move.b  P1CHG,d0               | cumule les appuis jusqu'a la prochaine lecture par la boucle principale
         or.b    d0,V_EACC
         move.b  STCHG,d0

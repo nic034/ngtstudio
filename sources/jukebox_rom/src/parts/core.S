@@ -318,6 +318,19 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    SPH_NPAL,8              | essai : nombre de teintes pour colorer les points (voir pal_saver, sphere_init)
         .equ    SPH_PAL0,25             | palettes 25..25+SPH_NPAL-1 : libres (non utilisees ailleurs dans le jukebox)
         .equ    NALL,    SPH0+SPH_N-1   | sprites 1..NALL utilises par l'economiseur (CD0 inclus, il precede TX0)
+        .equ    TO0,     NALL+1         | Toasty : sprites TO0..TO0+TO_NMAX-1 (326..333), apres tous les autres = devant
+        .equ    TO_NMAX, 8              | colonnes au plus (7 utilisees, 112 px)
+        .equ    TO_PAL0, 33             | palettes 33..36 (libres ; sphere 25..32)
+        .equ    TO_NPAL, 4
+        .equ    TOD_SCB1,40             | toastydata : SCB1 des colonnes (TO_NMAX x 6 x 2 mots)
+        .equ    TOD_PAL, 40+TO_NMAX*24  | toastydata : palettes
+        .equ    TOD_SIZE,TOD_PAL+TO_NPAL*32
+        .equ    TO_WAIT, 592            | declenche hors economiseur : apparait 10 s apres l'entree dans l'economiseur
+        .equ    TO_TIME, 71022          | 20 min de lecture a 59,185 images/s
+        .equ    V_TOST,  RAM+1720       | Toasty : 0 arme, 1 declenche (attend l'economiseur), 2 anime, 3 passe / desactive
+        .equ    V_TOSF,  RAM+1722       | Toasty : image de l'animation (index dans to_dy)
+        .equ    V_TOSA,  RAM+1724       | Toasty : images depuis l'entree dans l'economiseur (plafonne a 65535)
+        .equ    V_TOPL,  RAM+1726       | Toasty : images de lecture (long)
         .equ    V_IPOS,  RAM+260        | position du petit texte (pixels)
         .equ    V_ILEN,  RAM+262        | longueur du petit texte (caracteres)
         .equ    V_INEW,  RAM+264        | 1 = reconstruire le petit texte en fin d'image
@@ -502,6 +515,7 @@ saver_on:
         move.l  #pal_saver,V_PALFN     | palettes de l'economiseur : posees par le VBlank (jamais pendant l'affichage : une
         bsr     wait_frame             |   ecriture de palette pendant l'affichage laisse des points / traits parasites sur
         bsr     wait_frame             |   une vraie console, MAME ne le montre pas) ; 2 images : au moins un VBlank entier
+        bsr     toasty_setup           | Toasty : tuiles et taille posees ici (hors VBlank), colonnes masquees
         move.w  #1,V_SAVER             | en dernier : le VBlank anime l'economiseur des que V_SAVER = 1
         rts
 
@@ -531,6 +545,11 @@ pal_saver:
         move.w  #0x147F,0x4003C2
         move.w  #0x594F,0x4003E2
         move.w  #0x5F4C,0x400402
+        lea     toastydata+TOD_PAL,a0  | Toasty : palettes 33..36 (ecrites par le constructeur ; zeros sans l'option,
+        lea     0x400000+TO_PAL0*32,a1 |   palettes alors jamais utilisees)
+        moveq   #TO_NPAL*16-1,d0
+39:     move.w  (a0)+,(a1)+
+        dbra    d0,39b
         rts
 
 saver_off:
@@ -550,10 +569,150 @@ saver_off:
 spr_hide:
         move.w  #1,4(a6)
         move.w  #0x8201,(a6)
-        move.w  #NALL-1,d0
+        move.w  #NALL+TO_NMAX-1,d0     | (Toasty compris : sprites TO0.. juste apres NALL)
 1:      clr.w   2(a6)
         dbra    d0,1b
         rts
+
+| ---------------------------------------------------------------- Toasty (option du constructeur)
+| Une seule fois par mise sous tension, seulement pendant l'economiseur, devant tout le reste (sprites TO0.., numeros
+| plus grands que tous les autres).  Declenche (V_TOST 0 -> 1) au premier de : debut d'une piste du 3e album de la
+| liste en venant d'un autre album (toasty_alb, appele par play), ou 20 min de lecture (toasty_time, VBlank, hors
+| pause et arret).  Si l'economiseur n'est pas affiche a ce moment-la, il attend : il apparait quand l'economiseur
+| est affiche depuis TO_WAIT images (10 s).  Un reveil pendant l'animation la termine (elle ne repasse pas).
+| 96 sprites par ligne : haut du bloc jamais au-dessus de la ligne 130 (repos 132, depassement 2 px), ou le pire
+| mesure est de 82 sprites (2.5.25, 6 min) : 82 + 7 colonnes = 89.
+
+toasty_init:                           | requete 2 (demarrage) : arme si l'option est construite, sinon termine
+        clr.w   V_TOSF
+        clr.w   V_TOSA
+        clr.l   V_TOPL
+        move.w  #3,V_TOST
+        tst.w   toastydata
+        beq.s   1f
+        clr.w   V_TOST
+1:      rts
+
+toasty_alb:                            | d0 = jeu de la piste qui demarre ; V_PG = jeu precedent (d0 inchange)
+        cmp.w   #2,d0                  | 3e album de la liste
+        bne.s   1f
+        cmp.w   V_PG,d0                | ... en venant d'un autre album
+        beq.s   1f
+        tst.w   V_TOST                 | arme seulement (le VBlank ne fait que 0 -> 1 ici : pas de conflit)
+        bne.s   1f
+        move.w  #1,V_TOST
+1:      rts
+
+toasty_time:                           | VBlank, a chaque image : temps de lecture reel (hors pause / arret)
+        tst.w   V_TOST
+        bne.s   9f
+        tst.w   V_PLAY
+        beq.s   9f
+        tst.w   V_PAUSE
+        bne.s   9f
+        addq.l  #1,V_TOPL
+        cmp.l   #TO_TIME,V_TOPL
+        bcs.s   9f
+        move.w  #1,V_TOST
+9:      rts
+
+toasty_setup:                          | saver_on (a6 = LSPC), avant que l'economiseur soit visible
+        clr.w   V_TOSA
+        cmp.w   #2,V_TOST              | anime au dernier reveil : interrompu, considere comme passe
+        bne.s   1f
+        move.w  #3,V_TOST
+1:      bsr     toasty_hide
+        lea     toastydata,a0
+        tst.w   (a0)
+        beq.s   9f
+        move.w  2(a0),d1               | colonnes
+        subq.w  #1,d1
+        lea     8(a0),a1               | (1re rangee, taille) par colonne
+        lea     TOD_SCB1(a0),a2        | (tuile, attribut) x 6 par colonne
+        move.w  #TO0<<6,d2             | SCB1 du sprite n : n x 64
+        move.w  #1,4(a6)
+2:      move.w  d2,(a6)
+        move.w  2(a1),d0               | taille (0 : colonne vide)
+        addq.w  #4,a1
+        movea.l a2,a3
+        bra.s   4f
+3:      move.w  (a3)+,2(a6)
+        move.w  (a3)+,2(a6)
+4:      dbra    d0,3b
+        lea     24(a2),a2
+        add.w   #64,d2
+        dbra    d1,2b
+        move.w  #0x8000+TO0,(a6)       | SCB2 : taille normale
+        moveq   #TO_NMAX-1,d0
+5:      move.w  #0x0FFF,2(a6)
+        dbra    d0,5b
+9:      rts
+
+toasty_hide:                           | colonnes masquees (hauteur 0) ; a6 = LSPC
+        move.w  #1,4(a6)
+        move.w  #0x8200+TO0,(a6)
+        moveq   #TO_NMAX-1,d0
+1:      clr.w   2(a6)
+        dbra    d0,1b
+        rts
+
+toasty_vbl:                            | VBlank, economiseur affiche, avant saver_scroll (a6 = LSPC ; d0-d4/a0-a1)
+        move.w  V_TOSA,d0              | images depuis l'entree dans l'economiseur (plafonne)
+        addq.w  #1,d0
+        beq.s   1f
+        move.w  d0,V_TOSA
+1:      move.w  V_TOST,d0
+        cmp.w   #2,d0
+        beq.s   4f
+        cmp.w   #1,d0
+        bne     9f
+        cmp.w   #TO_WAIT,V_TOSA        | declenche : economiseur affiche depuis 10 s au moins
+        bcs     9f
+        move.w  #2,V_TOST              | depart : X des colonnes, une fois
+        clr.w   V_TOSF
+        lea     toastydata,a0
+        move.w  2(a0),d1
+        subq.w  #1,d1
+        move.w  4(a0),d2
+        lsl.w   #7,d2
+        move.w  #1,4(a6)
+        move.w  #0x8400+TO0,(a6)       | SCB4 : X << 7, colonnes de 16 px cote a cote
+3:      move.w  d2,2(a6)
+        add.w   #16<<7,d2
+        dbra    d1,3b
+4:      move.w  V_TOSF,d0
+        lea     to_dy,a1
+        moveq   #0,d3
+        move.b  (a1,d0.w),d3
+        cmp.b   #255,d3
+        beq.s   8f
+        addq.w  #1,V_TOSF
+        lea     toastydata,a0
+        add.w   6(a0),d3               | haut du bloc = repos + decalage (biais de 8)
+        subq.w  #8,d3
+        move.w  #496,d4
+        sub.w   d3,d4                  | 496 - y
+        move.w  2(a0),d1
+        subq.w  #1,d1
+        lea     8(a0),a0
+        move.w  #1,4(a6)
+        move.w  #0x8200+TO0,(a6)       | SCB3 : Y de chaque colonne = haut du bloc + 16 x 1re rangee non vide
+5:      move.w  (a0)+,d2
+        move.w  (a0)+,d0
+        beq.s   6f
+        lsl.w   #4,d2
+        neg.w   d2
+        add.w   d4,d2
+        and.w   #0x1FF,d2
+        lsl.w   #7,d2
+        or.w    d0,d2
+        move.w  d2,2(a6)
+        bra.s   7f
+6:      clr.w   2(a6)
+7:      dbra    d1,5b
+9:      rts
+8:      move.w  #3,V_TOST              | fin : masque, ne repassera plus
+        bra     toasty_hide
 
 | texte selon l'etat : lecture en cours -> t_sc_play, sinon (arret, pause) -> t_sc_stop
 pick_text:
@@ -1705,6 +1864,25 @@ box_g:    .byte   0, 1, 2, 0, 1, 2, 0, 1, 2, 0      | emplacement modulo 3
 | colonnes - 1 (+38), rangees (+40), tuiles par image (+42), 320 - largeur (+44), 224 - hauteur (+46)
 boxdata:  .word   0
           .fill   BOX_DSC*BOX_NP, 1, 0
+| Toasty (rempli par le constructeur, JB_TOASTY_OFF ; tout a zero sans l'option) : actif, colonnes, X de la 1re
+| colonne, Y du haut du bloc au repos, puis TO_NMAX x (1re rangee non vide, taille en tuiles), TO_NMAX x 6 x (tuile,
+| attribut) = SCB1 de chaque colonne a partir de sa 1re rangee, TO_NPAL palettes de 16 couleurs
+toastydata: .fill TOD_SIZE, 1, 0
+| Toasty : decalage vertical (+8) image par image a partir du repos ; 255 = fin.  Montee 30 images avec 2 px de
+| depassement, tenue 96 images (gorgee de 2 px), descente 24 images ; ~2,5 s (tools : genere, voir NOTES_JUKEBOX.md)
+to_dy:
+        .byte   93, 82, 73, 64, 56, 49, 42, 36, 31, 26, 23, 19, 16, 14, 12, 10
+        .byte   9, 8, 7, 7, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8
+        .byte   8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+        .byte   7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+        .byte   6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+        .byte   7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8
+        .byte   8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+        .byte   8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9
+        .byte   10, 11, 12, 14, 16, 19, 22, 25, 28, 32, 36, 41, 46, 51, 56, 62
+        .byte   68, 75, 82, 89, 96, 104
+        .byte   255
+        .balign 2
 | hauteur des boites : v = t x 17 / 22 - 48 pour t = 0..351 (de -48 a 223 px)
 box_v:
         .word   -48, -48, -47, -46, -45, -45, -44, -43, -42, -42, -41, -40, -39, -38, -38, -37

@@ -1,3 +1,22 @@
+2.5.26 2026-11-07  Jukebox ROM:
+                   NEW  build option "Aurelien - Toasty" (Cartridge tab check box, --toasty, off by default): a
+                        portrait of Aurelien drinking from his mug pops up from the bottom-right corner of the screen
+                        saver, in front of everything (text, objects, sphere, small text), and goes back down, like
+                        the Toasty of Mortal Kombat II.  ONCE per power-on, at the first of: the first track of the
+                        3rd album of the list starts (coming from another album), or 20 minutes of playback (pause
+                        and stop not counted).  Only while the screen saver is on: if it is not on at that moment,
+                        it comes 10 s after the screen saver starts.  A press during the animation hides it for good
+                        (and is not passed to the player).  ~2.5 s: rise 0.5 s, hold 1.6 s, down 0.4 s
+                   One picture (frame 8 of the supplied sheet; the 16 frames are the same pose moved up and down,
+                        with small random drawing differences between frames) moved by the jukebox itself: 112 x 94
+                        px, 7 sprite columns trimmed to their content (3 sprites on the top lines), 4 palettes of
+                        15 colours chosen per tile (palettes 33-36), 30 tiles at 0x3F00, sprites 326-333
+                   Measured in MAME (6 min of screen saver with the Toasty repeating, text and sphere scenes, objects
+                        at their densest): 89 sprites per line at most (limit 96), its top never above line 130;
+                        2 lines of the vertical blank, done first, before the rest of the screen saver.  Without the
+                        option the ROM differs only by a 360-byte block of zeros and no tiles
+                   Tools: jukebox_rom/tools/pack_toasty.py (picture -> JB_TOASTY_B85), tools/embed.py (assembles
+                        and writes the binaries and offsets into ngt_studio.py, checked by reading them back)
 2.5.23 2026-10-28  Jukebox ROM source (core.S/ui3.S/draw3.S):
                    CLEANED a handful of leftovers found unused by a full cross-reference of every symbol: 6 unused
                         .equ constants, a vumeter colour table superseded by the existing per-palette table, and an

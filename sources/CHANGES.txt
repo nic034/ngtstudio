@@ -1,6 +1,12 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.26 (2026-11-07)
+- Jukebox ROM: new build option "Aurelien - Toasty" (check box in the Cartridge tab, or --toasty; off by default).
+  Once per power-on, during the screen saver, Aurelien pops up from the bottom-right corner in front of everything,
+  sips from his mug and goes back down (~2.5 s): when the 3rd album starts, or after 20 minutes of playback,
+  whichever comes first (10 s after the screen saver starts if it was not on at that moment).
+
 2.5.25 (2026-10-31)
 - Jukebox screen saver: fixed the bouncing point sphere (new in 2.5.24) overlapping and partly going under the
   small scrolling text at the bottom of the screen on every bounce. The floor is now right above that text.

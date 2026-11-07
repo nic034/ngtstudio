@@ -117,6 +117,7 @@ game:   clr.l   V_PALFN                | (palettes en attente : aucune ; le VBla
         move.w  #0xFFFF,V_BANK
         move.w  #1008,V_FREE
         move.l  #0x4E474A42,V_MAGIC    | "NGJB" : jukebox initialise (voir la reprise ci-dessus)
+        bsr     toasty_init            | Toasty : arme (option du constructeur) ou desactive ; pas a la reprise MVS
         move.w  #1,V_DIRTY
         move.l  0x148,V_SBASE
         move.l  0x144,d0               | index NGJB
@@ -313,6 +314,7 @@ play:   movem.l d0-d1,-(sp)
         bsr     wait_frame
         bsr     wait_frame
         movem.l (sp)+,d0-d1
+        bsr     toasty_alb             | Toasty : passage au 3e album de la liste (V_PG = encore le jeu precedent)
         move.w  d0,V_PG
         move.w  d1,V_PT
         move.w  d0,V_GAME
