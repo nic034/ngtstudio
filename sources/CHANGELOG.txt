@@ -1,3 +1,48 @@
+2.5.26 2026-11-07  Jukebox ROM source (core.S):
+                   FASTER screen-saver point sphere: about 38 % less time per frame (measured in MAME: the
+                        sphere took ~128 of the 264 lines of each frame, now ~79).  The 8 rotation multiplications
+                        come from 4 product tables rebuilt every frame by additions, the points are stored as
+                        pre-doubled words, no stack traffic in the loop, and the 3 x 96 VRAM words go out in
+                        12-cycle bursts (the LSPC minimum).  Same result to the byte: sphere VRAM identical on every
+                        frame (2438 frames compared), music data sent to the Z80 identical.  The sphere still runs
+                        past the vertical blank (it did before too): see NOTES_JUKEBOX.md
+                   FIXED the nearest points of the sphere sometimes turning into a thin line or vanishing for a
+                        frame: the depth goes from -66 to 66 but the zoom table only covered -64..63, so the five
+                        edge values were read past the table (code bytes).  Clamped to the table ends; only those
+                        zoom values change (912 of 2438 sphere frames had at least one such point in MAME)
+                   NEW  MAME test mame_tests/saver_sphere.lua: sphere scene, wake-up from it (joystick, button,
+                        coin), back to the scrolling text
+
+2.5.25 2026-10-31  Jukebox ROM source (core.S):
+                   FIXED the bouncing point sphere (new in 2.5.24): at the bottom of its bounce the lowest
+                        projected point could reach up to 75 px below its centre (measured over all 96 points and
+                        every possible rotation); the floor was set at 184, so the ball actually overlapped and
+                        partly went under the small scrolling text at the bottom of the screen (SM_YB = 211) on
+                        every bounce.  The floor is now 134: the lowest point reaches 209, 2 px clear of the text,
+                        never under it, and the bounce uses more of the screen height (looks more centred).  Only
+                        the floor changed; bounce height/speed are the same, so on the tallest bounces the sphere
+                        now also grazes a little more off the top edge than before (clipped, not a bug, same kind
+                        of hardware clipping that already happened at the bottom before this fix).
+
+2.5.24 2026-10-30  Jukebox ROM source (core.S):
+                   Screen saver, point sphere: it now BOUNCES like a ball across the bottom of the screen,
+                        left to right, at varying heights, while still spinning on itself exactly as before
+                        (sphere_step untouched). New sphere_bounce routine (called once per frame by
+                        sphere_draw, right after sphere_step): gravity-based fixed-point simulation (<<6),
+                        slow lateral drift bouncing off the screen edges instead of exiting them (always
+                        visible for the whole scene), slow gravity for a deliberate, non-twitchy fall, a new
+                        random upward speed drawn on every ground contact (capped so the ball never exits
+                        the top of the screen by much). No new sprite, no new table: only the sphere's
+                        projection centre moves, same 96 points, same rendering. Also SPED UP the handful of
+                        per-frame multiplications by a fixed constant (screen-saver scrolling-text wrap, CD
+                        icon fade, vumeter colour thresholds): replaced with shifts and additions, exact for
+                        every value these ever take; everything else deliberately left alone (constant
+                        divisions with a hand-tuned feel, or by a runtime value: no safe, exact replacement).
+                        No behaviour change on the untouched routines (confirmed byte-identical where
+                        unaffected); full MAME check frame by frame (screen saver text/wave/CD icon,
+                        vumeters, and a full natural run of the text<->sphere transition with the new bounce).
+                        Sprite budget unchanged: 325/381 used, margin 56.
+
 2.5.23 2026-10-28  Jukebox ROM source (core.S/ui3.S/draw3.S):
                    CLEANED a handful of leftovers found unused by a full cross-reference of every symbol: 6 unused
                         .equ constants, a vumeter colour table superseded by the existing per-palette table, and an

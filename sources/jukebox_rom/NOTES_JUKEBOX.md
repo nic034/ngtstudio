@@ -266,6 +266,44 @@ ci-dessous (amplitude minimale, espacement des objets).
   40/40 MVS, 38/38 AES ; endurance 5 min ; fuzz 6 min (4 configurations) ; sans planche et avec une seule planche
   (large) ; `saver_perline.lua` (sprites par ligne), `saver_irqcost.lua` (coût de l'interruption), `saver_flux.lua`, `saver_cover.lua` (couverture du damier).
 
+### Sphère de points (2.5.24 ; optimisée et corrigée en 2.5.26)
+
+- Remplace le grand texte une boucle sur deux (`scene_pass`) : 96 points (`sph_pts`), rotation sur 2 axes, perspective
+  approchée, zoom matériel SCB2 (`sph_shrink`), centre qui rebondit (`sphere_bounce`). Calculée dans l'interruption
+  VBlank (`sphere_draw`, appelée par `saver_scroll`).
+- **Coût mesuré sous MAME** (ROM instrumentée : compteur de ligne `$3C0006` relevé à 7 points du VBlank, 4 min
+  d'économiseur, AoF2, BIOS MVS euro). Position en lignes depuis le début du retour de trame (40 lignes) :
+
+  | | 2.5.25 | 2.5.26 |
+  |---|---|---|
+  | fin de `saver_scroll`, scène texte (moyenne / max) | 26,9 / 68 | 27,2 / 68 |
+  | fin de `saver_scroll`, scène sphère (moyenne / max) | 144,2 / 156 | 96,1 / 105 |
+  | dernière écriture de palette (max) | 26 | 26 |
+
+  La sphère seule passe de ~128 à ~79 lignes par image (−38 %). Elle **dépasse toujours le retour de trame** : ses
+  écritures VRAM tombent pendant l'affichage (vers les lignes 85-96 au lieu de 130-156). Les palettes, elles, sont
+  toutes posées avant la ligne 26 : pas de « neige ».
+- **2.5.26, calcul identique à l'octet** : les 8 produits de la rotation viennent de 4 tables `SPH_TCX/TSX/TCY/TSY`
+  (RAM+0xC000, 1056 octets) refaites à chaque image par additions ; points rangés en mots doublés (indices directs) ;
+  plus de pile dans la boucle ; écriture VRAM par rafales `move.w (a0)+,(a4)`, soit 12 cycles entre deux écritures,
+  le minimum du LSPC (https://wiki.neogeodev.org/index.php?title=VRAM : 12 cycles entre deux écritures, 16 avant de
+  changer d'adresse). Plages vérifiées exhaustivement (65 536 couples d'angles × 96 points) : Z1 −65..64, Z2 −66..66.
+- **Vérification** (`cmp.lua`, hors dépôt) : VRAM reconstruite en espionnant les écritures LSPC, image par image.
+  Les 3 × 96 mots de la sphère sont identiques à la 2.5.25 sur les 2438 images de sphère ; les données musicales
+  envoyées au Z80 sont identiques (108 661 octets, mêmes commandes aux mêmes positions). Les pixels rendus par MAME
+  diffèrent dès la première image de sphère : MAME relit la liste des sprites ligne par ligne, et les points sont
+  maintenant écrits plus tôt dans l'image. Ensuite, la boucle principale ayant plus de temps, le relais vers le Z80
+  change de cadence d'une image, donc les vumètres et l'ondulation (comportement normal, comme entre deux consoles).
+- **Correction 2.5.26** : Z2 va de −66 à 66 mais `sph_shrink` ne couvrait que −64..63 ; les 5 valeurs extrêmes étaient
+  lues hors de la table (fin de `sph_pts`, code de `setpals` : 0xC000, 0xF900, 0x41F9, 0x0040, 0x0000), et les points
+  les plus proches devenaient un trait ou disparaissaient. Sous MAME : 912 images de sphère sur 2438 avaient au moins
+  un point concerné. Table bornée par ses valeurs extrêmes ; seules ces valeurs SCB2 changent (vérifié).
+- Test `mame_tests/saver_sphere.lua` : 96 points affichés et grand texte masqué pendant la sphère, sphère animée,
+  réveil depuis la sphère par la croix, A (appui consommé) et une pièce MVS, retour au texte (sphère masquée).
+- **Piste non retenue (changerait le comportement)** : écrire en VRAM au début de l'interruption le tampon calculé
+  à l'image précédente (toutes les écritures dans le retour de trame, plus de déchirure possible sur console), au prix
+  d'une image de retard de la sphère.
+
 ## Pièges Neo Geo rencontrés (toujours valables)
 
 1. Sans le bloc de sécurité (pointeur en `$182`), le BIOS refuse la cartouche et reste sur une grille de test.
