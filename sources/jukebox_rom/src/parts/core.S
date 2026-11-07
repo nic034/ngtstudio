@@ -1910,8 +1910,10 @@ sph_pts:                               | 96 points (X,Y,Z), -64..63, coherent av
         SPT     11, -63, -7
         SPT     0, -64, 0
         .balign 2
-        .word   0xF900, 0xC000          | Z2 = -66, -65 (etape A : octets identiques a la 2.5.25)
-sph_shrink:                             | SCB2 par Z'' (-64..63) : bits0-7 Y-shrink, bits8-11 X-shrink
+        .word   0x0559, 0x0559          | Z2 = -66, -65 : bornes (2.5.26).  Z2 va de -66 a 66 (verifie pour tous les
+                                       |   angles) : avant, ces 5 cas lisaient hors de la table (fin de sph_pts, code
+                                       |   de setpals) et les points les plus proches devenaient un trait ou disparaissaient
+sph_shrink:                             | SCB2 par Z'' (-64..63, bornes -66..66) : bits0-7 Y-shrink, bits8-11 X-shrink
         .word   0x0559, 0x055B, 0x055C, 0x055D, 0x065E, 0x0660, 0x0661, 0x0662
         .word   0x0664, 0x0665, 0x0666, 0x0667, 0x0669, 0x066A, 0x066B, 0x066D
         .word   0x066E, 0x076F, 0x0771, 0x0772, 0x0773, 0x0774, 0x0776, 0x0777
@@ -1928,7 +1930,7 @@ sph_shrink:                             | SCB2 par Z'' (-64..63) : bits0-7 Y-shr
         .word   0x0DE0, 0x0DE1, 0x0DE3, 0x0DE4, 0x0DE5, 0x0EE6, 0x0EE8, 0x0EE9
         .word   0x0EEA, 0x0EEC, 0x0EED, 0x0EEE, 0x0EEF, 0x0EF1, 0x0EF2, 0x0EF3
         .word   0x0EF5, 0x0EF6, 0x0FF7, 0x0FF9, 0x0FFA, 0x0FFB, 0x0FFC, 0x0FFE
-        .word   0x41F9, 0x0040, 0x0000  | Z2 = 64, 65, 66 (etape A : octets identiques a la 2.5.25)
+        .word   0x0FFE, 0x0FFE, 0x0FFE  | Z2 = 64, 65, 66 : bornes (2.5.26, voir plus haut)
 | --- fin des tables generees ---
 
 | d7 = 0 : couleurs normales ; 1 : couleurs a 50 % (sauf la couleur 1 des palettes 10..15 : logo vif)
