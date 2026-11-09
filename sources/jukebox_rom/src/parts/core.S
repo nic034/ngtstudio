@@ -325,12 +325,9 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    TOD_SCB1,40             | toastydata : SCB1 des colonnes (TO_NMAX x 6 x 2 mots)
         .equ    TOD_PAL, 40+TO_NMAX*24  | toastydata : palettes
         .equ    TOD_SIZE,TOD_PAL+TO_NPAL*32
-        .equ    TO_WAIT, 592            | declenche hors economiseur : apparait 10 s apres l'entree dans l'economiseur
-        .equ    TO_TIME, 71022          | 20 min de lecture a 59,185 images/s
-        .equ    V_TOST,  RAM+1720       | Toasty : 0 arme, 1 declenche (attend l'economiseur), 2 anime, 3 passe / desactive
+        .equ    V_TOST,  RAM+1720       | Toasty : 0 arme (economiseur affiche), 1 declenche, 2 anime, 3 passe / desactive
         .equ    V_TOSF,  RAM+1722       | Toasty : image de l'animation (index dans to_dy)
-        .equ    V_TOSA,  RAM+1724       | Toasty : images depuis l'entree dans l'economiseur (plafonne a 65535)
-        .equ    V_TOPL,  RAM+1726       | Toasty : images de lecture (long)
+        .equ    V_TOSND, RAM+1724       | Toasty : 1 = cri a envoyer au Z80 (FF 07) par la boucle principale
         .equ    V_IPOS,  RAM+260        | position du petit texte (pixels)
         .equ    V_ILEN,  RAM+262        | longueur du petit texte (caracteres)
         .equ    V_INEW,  RAM+264        | 1 = reconstruire le petit texte en fin d'image
@@ -575,52 +572,46 @@ spr_hide:
         rts
 
 | ---------------------------------------------------------------- Toasty (option du constructeur)
-| Une seule fois par mise sous tension, seulement pendant l'economiseur, devant tout le reste (sprites TO0.., numeros
-| plus grands que tous les autres).  Declenche (V_TOST 0 -> 1) au premier de : debut d'une piste du 3e album de la
-| liste en venant d'un autre album (toasty_alb, appele par play), ou 20 min de lecture (toasty_time, VBlank, hors
-| pause et arret).  Si l'economiseur n'est pas affiche a ce moment-la, il attend : il apparait quand l'economiseur
-| est affiche depuis TO_WAIT images (10 s).  Un reveil pendant l'animation la termine (elle ne repasse pas).
+| 2.5.27 : une fois par economiseur.  Chaque entree dans l'economiseur l'arme (toasty_setup, V_TOST = 0) ; le premier
+| changement de piste qui suit, economiseur affiche (toasty_trk, appele par play), le declenche (1) ; le VBlank le
+| fait partir a l'image suivante (2) et demande le cri au Z80 (V_TOSND, envoye par la boucle principale : tout le
+| dialogue avec le Z80 se fait la, un FF 07 glisse dans un echappement FF FF depuis le VBlank decalerait le flux).
+| Fin de l'animation, ou reveil pendant l'animation : 3 jusqu'a l'economiseur suivant.  Mode LOOP : la piste ne
+| change pas, pas de Toasty.  Devant tout le reste (sprites TO0.., numeros plus grands que tous les autres).
 | 96 sprites par ligne : haut du bloc jamais au-dessus de la ligne 130 (repos 132, depassement 2 px), ou le pire
 | mesure est de 82 sprites (2.5.25, 6 min) : 82 + 7 colonnes = 89.
 
-toasty_init:                           | requete 2 (demarrage) : arme si l'option est construite, sinon termine
+toasty_init:                           | requete 2 (demarrage) : rien d'arme avant le premier economiseur
         clr.w   V_TOSF
-        clr.w   V_TOSA
-        clr.l   V_TOPL
+        clr.w   V_TOSND
         move.w  #3,V_TOST
+        rts
+
+toasty_trk:                            | play, piste qui demarre : arme et economiseur affiche -> declenche (d0-d1 inchanges)
+        tst.w   V_SAVER                | (play et saver_on tournent dans la boucle principale ; le VBlank ne fait que
+        beq.s   1f                     |   1 -> 2 -> 3 : pas de conflit)
+        tst.w   V_TOST
+        bne.s   1f
+        move.w  #1,V_TOST
+1:      rts
+
+toasty_snd:                            | boucle principale, apres feed : cri demande par le VBlank -> FF 07 au Z80
+        tst.w   V_TOSND
+        beq.s   1f
+        clr.w   V_TOSND
+        movem.l d0-d6,-(sp)            | (sendb modifie d0, d3-d6)
+        move.b  #0xFF,d0
+        bsr     sendb
+        move.b  #0x07,d0
+        bsr     sendb
+        movem.l (sp)+,d0-d6
+1:      rts
+
+toasty_setup:                          | saver_on (a6 = LSPC), avant que l'economiseur soit visible : arme (option
+        move.w  #3,V_TOST              |   construite) ou rien ; une animation interrompue au dernier reveil est finie
         tst.w   toastydata
         beq.s   1f
         clr.w   V_TOST
-1:      rts
-
-toasty_alb:                            | d0 = jeu de la piste qui demarre ; V_PG = jeu precedent (d0 inchange)
-        cmp.w   #2,d0                  | 3e album de la liste
-        bne.s   1f
-        cmp.w   V_PG,d0                | ... en venant d'un autre album
-        beq.s   1f
-        tst.w   V_TOST                 | arme seulement (le VBlank ne fait que 0 -> 1 ici : pas de conflit)
-        bne.s   1f
-        move.w  #1,V_TOST
-1:      rts
-
-toasty_time:                           | VBlank, a chaque image : temps de lecture reel (hors pause / arret)
-        tst.w   V_TOST
-        bne.s   9f
-        tst.w   V_PLAY
-        beq.s   9f
-        tst.w   V_PAUSE
-        bne.s   9f
-        addq.l  #1,V_TOPL
-        cmp.l   #TO_TIME,V_TOPL
-        bcs.s   9f
-        move.w  #1,V_TOST
-9:      rts
-
-toasty_setup:                          | saver_on (a6 = LSPC), avant que l'economiseur soit visible
-        clr.w   V_TOSA
-        cmp.w   #2,V_TOST              | anime au dernier reveil : interrompu, considere comme passe
-        bne.s   1f
-        move.w  #3,V_TOST
 1:      bsr     toasty_hide
         lea     toastydata,a0
         tst.w   (a0)
@@ -657,19 +648,14 @@ toasty_hide:                           | colonnes masquees (hauteur 0) ; a6 = LS
         rts
 
 toasty_vbl:                            | VBlank, economiseur affiche, avant saver_scroll (a6 = LSPC ; d0-d4/a0-a1)
-        move.w  V_TOSA,d0              | images depuis l'entree dans l'economiseur (plafonne)
-        addq.w  #1,d0
-        beq.s   1f
-        move.w  d0,V_TOSA
-1:      move.w  V_TOST,d0
+        move.w  V_TOST,d0
         cmp.w   #2,d0
         beq.s   4f
         cmp.w   #1,d0
         bne     9f
-        cmp.w   #TO_WAIT,V_TOSA        | declenche : economiseur affiche depuis 10 s au moins
-        bcs     9f
-        move.w  #2,V_TOST              | depart : X des colonnes, une fois
+        move.w  #2,V_TOST              | depart (declenche par le changement de piste) : X des colonnes, une fois
         clr.w   V_TOSF
+        move.w  #1,V_TOSND             | et le cri (boucle principale)
         lea     toastydata,a0
         move.w  2(a0),d1
         subq.w  #1,d1
@@ -711,11 +697,15 @@ toasty_vbl:                            | VBlank, economiseur affiche, avant save
 6:      clr.w   2(a6)
 7:      dbra    d1,5b
 9:      rts
-8:      move.w  #3,V_TOST              | fin : masque, ne repassera plus
+8:      move.w  #3,V_TOST              | fin : masque, jusqu'a l'economiseur suivant
         bra     toasty_hide
 
-| texte selon l'etat : lecture en cours -> t_sc_play, sinon (arret, pause) -> t_sc_stop
+| texte selon l'etat : lecture en cours -> t_sc_play, sinon (arret, pause) -> t_sc_stop ; texte personnalise
+| (t_custom, rempli par le constructeur, 2.5.27) : le meme dans les deux cas
 pick_text:
+        lea     t_custom,a0
+        tst.b   (a0)
+        bne.s   2f
         lea     t_sc_play,a0
         tst.w   V_PLAY
         beq.s   1f
@@ -1931,6 +1921,9 @@ cd_fade_tab:
         .word   0x0EEC, 0x3CDD, 0x1CCC, 0x4ABC, 0x47EE, 0x27BE, 0x08AC, 0x3889, 0x7768, 0x647D, 0x7457, 0x7928, 0x7324, 0x4113
         .word   0x0FFD, 0x3DEE, 0x1DDD, 0x4BCD, 0x08FF, 0x67CF, 0x68AD, 0x489A, 0x0879, 0x058E, 0x0568, 0x2A29, 0x2425, 0x4113
 t_sc_play: .asciz "NEO GEO JUKEBOX - ENJOY FINE MUSIC ! - NIC034 / DELTA ISLAND    "
+| texte qui ondule personnalise (constructeur, JB_STEXT_OFF) : 256 caracteres au plus + 4 espaces de separation + 0,
+| police 0x20..0x5F (le constructeur convertit) ; 0 en tete = textes d'origine ci-dessus et ci-dessous
+t_custom: .fill 264, 1, 0
 t_sc_stop: .asciz "NEO GEO JUKEBOX THANKS FOR USING THIS SOFTWARE - NIC034 / DELTA ISLAND    "
 | sinus x 64 sur 256 pas (l'amplitude est appliquee ensuite)
 sc_sin:

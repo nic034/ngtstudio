@@ -14,6 +14,15 @@
 ;   FF 01   STOP (silence)      FF 02   PLAY (vide le tampon, demarre)
 ;   FF 03   PAUSE               FF 04   REPRISE
 ;   FF 06   voix declenchees (reponse bits 0-3 FM1-4, 4 SSG, 5 ADPCM-A, 6 ADPCM-B), puis remise a zero
+;   FF 07   cri du Toasty : echantillon ADPCM-A du bloc sfxp (0x0040, rempli par le constructeur) sur la voie
+;           sfxch, empruntee a la musique pendant sfxdur ticks ; sfxch >= 6 : pas de son, commande ignoree
+; Voie empruntee : pendant le cri, les ecritures de la musique sur ses registres (08/10/18/20/28 + voie) sont
+; retenues dans une copie (shad) et son bit est retire des declenchements / coupures (reg 0) ; a la fin, la copie
+; est reecrite.  Les autres voies (FM, SSG, 5 ADPCM-A, ADPCM-B) ne sont jamais touchees.  silence (fin de piste,
+; STOP) et pmute (pause) epargnent aussi la voie du cri : la musique peut changer de piste pendant le cri.
+; Volume general ADPCM-A (port B reg 01) : 0 au demarrage de la puce = voies ADPCM-A muettes (niveau 31 + total 0 =
+; 63 d'attenuation).  Si la musique ne l'a jamais ecrit depuis le demarrage (tlseen = 0), le cri le met a 0x3F puis
+; le remet a 0 ; sinon il garde la valeur de la musique (les autres voies ADPCM-A ne changent pas de volume).
 ; Reponse (port 0x0C) : bit7 = bascule a chaque octet recu,
 ;   bit6 = 1 tant qu'une piste est en cours (y compris en pause),
 ;   bits 0..5 = places libres / 16
@@ -34,6 +43,12 @@ paused: equ 0xFC0E              ; demande de pause (NMI)
 pmuted: equ 0xFC0F              ; 1 = la coupure de pause a ete faite
 ssgv:   equ 0xFC10              ; 3 octets : derniers volumes SSG (regs 8..A)
 vflags: equ 0xFC13              ; voix declenchees depuis la derniere requete FF 06 (vumetres)
+sfxreq: equ 0xFC14              ; 1 = cri demande (NMI), joue par la boucle principale
+sfxon:  equ 0xFC15              ; 1 = voie empruntee (cri en cours)
+sfxend: equ 0xFC16              ; tcnt de fin du cri
+shad:   equ 0xFC18              ; 5 octets : derniere valeur ecrite par la musique en 08/10/18/20/28 + voie
+tlseen: equ 0xFC1D              ; 1 = la musique a ecrit le volume general ADPCM-A (port B reg 01) depuis le demarrage
+tlset:  equ 0xFC1E              ; 1 = le cri a mis ce volume a 0x3F (a remettre a 0 a la fin)
 stk:    equ 0xFFF0
 
         org 0x0000
@@ -43,6 +58,13 @@ stk:    equ 0xFFF0
         jp boot
         defs 0x38-$
         jp isr
+        defs 0x40-$
+; bloc du cri du Toasty (0x0040), ecrit par le constructeur (ngt_studio.py, build_cart) ; par defaut : aucun son
+sfxp:   defb 'S','F','X',0
+sfxch:  defb 0xFF               ; voie ADPCM-A 0..5 (la moins utilisee par les albums), 0xFF = pas de son
+sfxs:   defw 0                  ; adresse de debut / 256 en V-ROM
+sfxe:   defw 0                  ; adresse de fin / 256 (incluse)
+sfxdur: defw 0                  ; duree en ticks (32 echantillons de sortie)
         defs 0x66-$
         jp nmi
 
@@ -55,6 +77,15 @@ boot:   out (0x18),a
         ld (ssgv),hl
         xor a
         ld (ssgv+2),a
+        ld (sfxreq),a
+        ld (sfxon),a
+        ld (tlseen),a
+        ld (tlset),a
+        ld hl,shad
+        ld b,5
+bz1:    ld (hl),a
+        inc hl
+        djnz bz1
         ld (state),a
         ld (esc),a
         ld (tog),a
@@ -77,7 +108,8 @@ boot:   out (0x18),a
         ld (magic),a
         out (0x08),a
         ei
-idle:   ld a,(state)
+idle:   call sfxchk             ; cri du Toasty possible a l'arret aussi
+        ld a,(state)
         or a
         jr z,idle
 main:   call pchk
@@ -160,6 +192,8 @@ wb:     call getb
         ld b,a
         call getb
         ld c,a
+        call sfxflt             ; voie empruntee par le cri : ecriture retenue (Z) ou bit retire de C
+        jr z,wb1
         call ym_b
         ld a,b                  ; vumetres : depart ADPCM-A (port B, reg 0)
         or a
@@ -205,7 +239,8 @@ stopped: ld sp,stk
         jp idle
 
 ; pause : coupe le son une fois, puis attend la reprise (ou un STOP)
-pchk:   ld a,(paused)
+pchk:   call sfxchk
+        ld a,(paused)
         or a
         ret z
         ld a,(pmuted)
@@ -214,7 +249,8 @@ pchk:   ld a,(paused)
         ld a,1
         ld (pmuted),a
         call pmute
-pc_w:   ld a,(state)
+pc_w:   call sfxchk
+        ld a,(state)
         or a
         jr z,stopped
         ld a,(paused)
@@ -251,9 +287,7 @@ pmute:  ld b,0x28               ; FM : key-off des 4 voies (relachement naturel)
         call ym_a
         ld b,0x0A
         call ym_a
-        ld b,0x00
-        ld c,0xBF               ; ADPCM-A : coupe les 6 voies
-        call ym_b
+        call sx_cut             ; ADPCM-A : coupe les 6 voies (sauf celle du cri en cours)
         ld b,0x10
         ld c,0x01               ; ADPCM-B : reset puis arret
         call ym_a
@@ -341,14 +375,187 @@ sl1:    ld c,0xFF               ; SL=15 RR=15 : relachement immediat
         call ym_a
         ld c,0x06
         call ym_a
-        ld b,0x00
-        ld c,0xBF               ; ADPCM-A : coupe les 6 voies
-        call ym_b
+        call sx_cut             ; ADPCM-A : coupe les 6 voies (sauf celle du cri en cours)
         ld b,0x10
         ld c,0x01               ; ADPCM-B : reset (bit 0 ; le bit 7 = START relancerait le dernier echantillon)
         call ym_a
         ld c,0x00
         call ym_a
+        ret
+
+; cri du Toasty : depart demande (FF 07) ou fin de l'emprunt de la voie ; conserve BC DE HL
+sfxchk: push bc
+        push de
+        push hl
+        ld a,(sfxreq)
+        or a
+        jr z,sx_t
+        xor a
+        ld (sfxreq),a
+        ld a,(sfxch)
+        cp 6
+        jp nc,sx_x              ; pas de son dans cette cartouche
+        call sx_bit             ; D = bit de la voie
+        ld b,0
+        ld a,d
+        or 0x80
+        ld c,a
+        call ym_b               ; coupe la note de la musique sur cette voie
+        ld a,(sfxch)
+        add a,0x08
+        ld b,a
+        ld c,0xDF               ; gauche + droite, niveau 31
+        call ym_b
+        ld hl,sfxs
+        ld e,4                  ; debut lo / hi (10, 18 + voie), fin lo / hi (20, 28 + voie)
+sx_w:   ld a,b
+        add a,8
+        ld b,a
+        ld c,(hl)
+        call ym_b
+        inc hl
+        dec e
+        jr nz,sx_w
+        ld a,(tlseen)           ; volume general ADPCM-A jamais ecrit par la musique : 0 = muet -> 0x3F le temps du cri
+        or a
+        jr nz,sx_v
+        ld b,0x01
+        ld c,0x3F
+        call ym_b
+        ld a,1
+        ld (tlset),a
+sx_v:   ld b,0
+        ld c,d
+        call ym_b               ; depart
+        ld a,1
+        ld (sfxon),a
+        di
+        ld hl,(tcnt)
+        ei
+        ld de,(sfxdur)
+        add hl,de
+        ld (sfxend),hl
+        jr sx_x
+sx_t:   ld a,(sfxon)
+        or a
+        jr z,sx_x
+        di
+        ld hl,(tcnt)
+        ei
+        ld de,(sfxend)
+        or a
+        sbc hl,de
+        bit 7,h
+        jr nz,sx_x              ; pas encore fini
+        xor a
+        ld (sfxon),a
+        ld a,(sfxch)            ; voie rendue : registres de la musique reecrits (08, 10, 18, 20, 28 + voie)
+        add a,0x08
+        ld b,a
+        ld hl,shad
+        ld e,5
+sx_r:   ld c,(hl)
+        call ym_b
+        inc hl
+        ld a,b
+        add a,8
+        ld b,a
+        dec e
+        jr nz,sx_r
+        ld a,(tlset)
+        or a
+        jr z,sx_x
+        xor a
+        ld (tlset),a
+        ld a,(tlseen)           ; la musique l'a ecrit entre-temps : sa valeur est deja en place
+        or a
+        jr nz,sx_x
+        ld b,0x01
+        ld c,0
+        call ym_b
+sx_x:   pop hl
+        pop de
+        pop bc
+        ret
+
+; reg 0 = 0xBF (coupe les 6 voies ADPCM-A), sans la voie du cri s'il est en cours ; modifie A B C D
+sx_cut: ld b,0
+        ld c,0xBF
+        ld a,(sfxon)
+        or a
+        jp z,ym_b
+        call sx_bit
+        ld a,d
+        cpl
+        and c
+        ld c,a
+        jp ym_b
+
+; D <- 1 << sfxch (modifie A)
+sx_bit: ld a,(sfxch)
+        ld d,1
+        or a
+        ret z
+sx_b1:  sla d
+        dec a
+        jr nz,sx_b1
+        ret
+
+; ecriture port B de la musique (B = registre, C = valeur) face a la voie du cri :
+; copie tenue a jour ; pendant le cri -> Z = ne pas ecrire, ou NZ avec le bit de la voie retire de C (reg 0)
+sfxflt: push de
+        push hl
+        ld a,(sfxch)
+        cp 6
+        jr nc,sf_ok             ; pas de son : tout passe
+        ld e,a
+        ld a,b
+        or a
+        jr z,sf_key
+        cp 1                    ; volume general ADPCM-A : ecrit par la musique (toujours transmis)
+        jr nz,sf0
+        ld a,1
+        ld (tlseen),a
+        jr sf_ok
+sf0:    ld a,b
+        sub e                   ; registre - voie : 8, 16, 24, 32, 40 -> copie 0..4
+        jr c,sf_ok
+        ld d,a
+        and 7
+        jr nz,sf_ok
+        ld a,d
+        cp 8
+        jr c,sf_ok
+        cp 41
+        jr nc,sf_ok
+        rrca
+        rrca
+        rrca
+        dec a
+        ld hl,shad
+        add a,l
+        ld l,a
+        jr nc,sf1
+        inc h
+sf1:    ld (hl),c
+        ld a,(sfxon)
+        or a
+        jr z,sf_ok
+        xor a                   ; Z : retenue pendant le cri
+        jr sf_x
+sf_key: ld a,(sfxon)
+        or a
+        jr z,sf_ok
+        call sx_bit
+        ld a,d
+        cpl
+        and c
+        ld c,a                  ; voie retiree du declenchement / de la coupure
+        and 0x3F                ; Z si plus aucune voie concernee
+        jr sf_x
+sf_ok:  or 1                    ; NZ : ecrire
+sf_x:   pop hl
+        pop de
         ret
 
 ; Timer A du YM2610 : un tick tous les 32 echantillons (NA = 992)
@@ -441,9 +648,14 @@ n_res:  cp 6
         ld (vflags),a
         jr n_r2
 n_rs2:  cp 4
-        jr nz,n_rep
+        jr nz,n_rs3
         xor a                   ; REPRISE
         ld (paused),a
+        jr n_rep
+n_rs3:  cp 7
+        jr nz,n_rep
+        ld a,1                  ; CRI DU TOASTY : joue par la boucle principale (le NMI n'ecrit jamais dans le YM)
+        ld (sfxreq),a
         jr n_rep
 n_data: ld hl,(wr)
         ld (hl),b

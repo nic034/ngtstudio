@@ -4,6 +4,7 @@ Neo Geo: 112 px wide, transparent background, 4 palettes of 15 colours, each 16x
   python tools/pack_toasty.py [art/toasty_frame.png] [path/to/ngt_studio.py]
 
 Source: one frame of the sheet supplied by Nicolas (character drinking from a mug, magenta background), cropped
+(picture: (c) Aurelien / Bouz, all rights reserved, NOT under the MIT License),
 without loss: art/toasty_frame.png.  The 16 frames of the sheet are the same pose moved vertically (with small random
 differences between frames): the jukebox moves this single picture itself (core.S, to_dy), which is smoother.
 

@@ -1,3 +1,25 @@
+2.5.27 2026-11-09  Jukebox ROM:
+                   CHANGED "Aurelien - Toasty": once per screen saver, at the first track change after the screen
+                        saver starts (was: once per power-on, at the 3rd album or after 20 minutes, then a 10 s
+                        wait).  Each new screen saver arms it again.  LOOP mode: the track never changes, no Toasty
+                   NEW  Toasty sound (Cartridge tab "Toasty sound (your WAV)", --toasty-sound FILE): played with the
+                        Toasty, over the music.  Your own file, never stored in NGT Studio: silences trimmed (36 dB
+                        under the peak), mono, peak at -1 dBFS, resampled to 18518.5 Hz, ADPCM-A encoded, placed after
+                        the albums' V-ROM.  The Z80 driver borrows the ADPCM-A voice the albums use least, for the
+                        length of the sound only (FF 07): the music's writes to that voice are held and restored after,
+                        all other voices untouched, end of track / pause spare the shout; if the music never set the
+                        ADPCM-A master volume (0 at power-on = silent), the shout sets it and puts it back
+                   NEW  custom screen-saver wavy text (Cartridge tab, --saver-text, 256 characters): capitals, digits
+                        and punctuation (accents removed, the ROM font has no lower case); replaces both built-in texts
+                   Measured in MAME, real BIOS (Europe/US/Japan MVS, AES Asia/Japan, UniBIOS 3.3): shout isolated
+                        (same cartridge without the sound, deterministic emulation) vs the ADPCM-A decoder: correlation
+                        0.962; music identical before the shout, shifted by 42 us for ~2 s after (inaudible); 6-voice
+                        ADPCM-A album: no music trigger on the borrowed voice during the shout, the 5 others play;
+                        6 min of Toasty + shout repeating: 89 sprites per line at most (limit 96)
+                   Rights: "Aurelien - Toasty" picture (c) Aurelien / Bouz, all rights reserved (NOTICE.md, LICENSE,
+                        jukebox_rom/art/RIGHTS.txt, README of each cartridge)
+                   Tests: mame_tests/toasty_sfx.lua (replaces toasty_cases.lua); full_test.lua is out of date (same
+                        9 MVS / 6 AES failures on the original 2.5.25 with the real BIOS: not regressions)
 2.5.26 2026-11-07  Jukebox ROM:
                    NEW  build option "Aurelien - Toasty" (Cartridge tab check box, --toasty, off by default): a
                         portrait of Aurelien drinking from his mug pops up from the bottom-right corner of the screen

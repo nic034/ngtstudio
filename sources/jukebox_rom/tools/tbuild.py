@@ -4,7 +4,8 @@ Requires: m68k-linux-gnu-as/ld/objcopy (binutils for m68k) and z80asm.
 
   python tools/tbuild.py                          -> build/prom_nosec.bin, build/m1drv.bin, build/tiles.bin
   python tools/tbuild.py OUTDIR game1.ngt ...     -> also a MAME test set in OUTDIR (needs NGT_BIOS=path/neogeo.zip)
-                                                     (TOASTY=1 : with the "Aurelien - Toasty" option)
+                                                     (TOASTY=1 : with the "Aurelien - Toasty" option,
+                                                      TOASTY_SOUND=file.wav, SAVER_TEXT="...")
 """
 import runpy, subprocess, base64, zlib, sys, os, shutil
 here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))          # jukebox_rom/
@@ -26,6 +27,7 @@ def asm():
     sym = lambda n: int(next(l.split()[0] for l in nm.splitlines() if l.endswith(" " + n)), 16)
     asm.boxdata = sym("boxdata")                 # objets animes de l'economiseur (rempli par build_cart)
     asm.toasty = sym("toastydata") if " toastydata" in nm else 0   # Toasty (0 : source anterieur a la 2.5.26)
+    asm.stext = sym("t_custom") if " t_custom" in nm else 0        # texte personnalise (0 : avant la 2.5.27)
     return open(b + "/prom_nosec.bin", "rb").read(), open(b + "/m1drv.bin", "rb").read(), sym("secblk")
 
 if __name__ == "__main__":
@@ -38,11 +40,14 @@ if __name__ == "__main__":
         G["JB_PROM_B64"], G["JB_M1_B64"], G["JB_SECBLK_OFF"] = enc(prom), enc(m1), sec
         G["JB_BOXDATA_OFF"] = asm.boxdata
         G["JB_TOASTY_OFF"] = asm.toasty
+        G["JB_STEXT_OFF"] = asm.stext
         G["JB_TILES_B64"] = enc(open(os.path.join(here, "build", "tiles.bin"), "rb").read())
         out, files = sys.argv[1], g["ngt_group_files"](sys.argv[2:])
         bios = os.environ.get("NGT_BIOS", "neogeo.zip")
         pk = g["jukebox_pack"]([(f, list(range(len(g["read_meta"](f)["tracks"])))) for f in files])
-        rep, written = g["build_cart"](pk, "standard", bios, out, formats=("mame",), toasty=os.environ.get("TOASTY") == "1")
+        rep, written = g["build_cart"](pk, "standard", bios, out, formats=("mame",), toasty=os.environ.get("TOASTY") == "1",
+                                       toasty_sound=os.environ.get("TOASTY_SOUND") or None,
+                                       saver_text=os.environ.get("SAVER_TEXT") or None)
         shutil.copy(bios, out)
         print(rep)
         print("MAME:  cd", out, "&& mame neogeo ngjb -hashpath hash -rompath .")

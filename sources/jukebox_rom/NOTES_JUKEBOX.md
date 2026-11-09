@@ -266,21 +266,47 @@ ci-dessous (amplitude minimale, espacement des objets).
   40/40 MVS, 38/38 AES ; endurance 5 min ; fuzz 6 min (4 configurations) ; sans planche et avec une seule planche
   (large) ; `saver_perline.lua` (sprites par ligne), `saver_irqcost.lua` (coût de l'interruption), `saver_flux.lua`, `saver_cover.lua` (couverture du damier).
 
-## Toasty « Aurelien - Toasty » (2.5.26, option du constructeur ; `core.S` : toasty_init / toasty_alb / toasty_time / toasty_setup / toasty_vbl / toasty_hide)
+## Toasty « Aurelien - Toasty » (2.5.26, règle et cri : 2.5.27 ; `core.S` : toasty_init / toasty_trk / toasty_snd / toasty_setup / toasty_vbl / toasty_hide)
 
+- **Droits** : image © Aurelien / Bouz, tous droits réservés, hors licence MIT (`art/RIGHTS.txt`, `NOTICE.md`,
+  `LICENSE`, et le README de chaque cartouche). Aucun son n'est livré : le cri est un fichier choisi par
+  l'utilisateur à la construction, écrit seulement dans sa cartouche.
 - **Option** : case de l'onglet Cartridge (réglage `cart_toasty`), `--toasty` en ligne de commande, `TOASTY=1` pour
-  `tools/tbuild.py`. Décochée : le bloc `toastydata` (360 octets, `JB_TOASTY_OFF`) reste à zéro, aucune tuile ;
-  `toasty_init` met alors `V_TOST` = 3 au démarrage et rien ne se déclenche.
-- **Quand** : une seule fois par mise sous tension (requête 2 ; la reprise MVS par une pièce ne réarme pas), au premier de :
-  - début d'une piste du 3e album de la liste (jeu 2) en venant d'un autre album (`toasty_alb`, appelé par `play`
-    avant `move.w d0,V_PG`) : passage AUTO 2 -> 3 ou tirage RAND qui tombe dans l'album 3 ;
-  - 20 min de lecture réelle (`toasty_time`, VBlank : `V_TOPL` compte les images où `V_PLAY` ≠ 0 et hors pause ;
-    `TO_TIME` = 71022 images).
-  - Seulement pendant l'économiseur : déclenché (`V_TOST` = 1), il part quand l'économiseur est affiché depuis
-    `TO_WAIT` = 592 images (10 s, `V_TOSA`). Déclenché hors économiseur, il attend donc le suivant. Un réveil pendant
-    l'animation la masque (`spr_hide` couvre les sprites du Toasty) et la compte comme passée (`toasty_setup`).
-  - `V_TOST` : 0 armé, 1 déclenché, 2 animé, 3 passé / désactivé. RAM+1720..1729 (hors de la remise à zéro des
-    256 premiers octets : initialisée par `toasty_init`).
+  `tools/tbuild.py`. Décochée : le bloc `toastydata` (360 octets, `JB_TOASTY_OFF`) reste à zéro, aucune tuile, et
+  `toasty_setup` ne l'arme jamais.
+- **Quand (2.5.27)** : **une fois par économiseur**. Chaque entrée dans l'économiseur l'arme (`toasty_setup` dans
+  `saver_on`, `V_TOST` = 0) ; le premier changement de piste qui suit, économiseur affiché (`toasty_trk`, appelé par
+  `play`), le déclenche (1) ; le VBlank le fait partir à l'image suivante (2) et demande le cri (`V_TOSND`). Fin de
+  l'animation ou réveil pendant l'animation : 3 jusqu'à l'économiseur suivant. Mode LOOP : la piste ne change jamais,
+  pas de Toasty. (2.5.26 : une fois par mise sous tension, au 3e album ou après 20 min, puis 10 s d'attente : retiré.)
+  `V_TOST` RAM+1720, `V_TOSF` +1722, `V_TOSND` +1724 (initialisés par `toasty_init`, requête 2).
+- **Cri** : `toasty_snd` (boucle principale, après `feed`) envoie `FF 07` au Z80. Jamais depuis le VBlank : tout le
+  dialogue avec le Z80 se fait dans la boucle principale, et un `FF 07` glissé au milieu d'un échappement `FF FF`
+  décalerait le flux. Mesuré : le cri part 3 images après le départ de l'animation.
+- **Driver Z80** (`m1drv.asm`, bloc `sfxp` en 0x0040 rempli par le constructeur : "SFX" 0, voie, début / 256,
+  fin / 256 incluse, durée en ticks) : la voie ADPCM-A **la moins déclenchée par les albums** (comptée dans
+  `_jb_game`, `pk["adpcma_keys"]` ; égalité : la plus haute) est empruntée le temps du cri. Pendant l'emprunt, les
+  écritures de la musique sur ses registres (08/10/18/20/28 + voie) sont retenues dans `shad` et son bit est retiré
+  des déclenchements / coupures (reg 0) ; à la fin, `shad` est réécrit. Les autres voies (FM, SSG, 5 ADPCM-A,
+  ADPCM-B) ne sont jamais touchées. `silence` (fin de piste, STOP) et `pmute` (pause) épargnent la voie du cri
+  (`sx_cut`) : la piste change justement au moment du cri.
+- **Volume général ADPCM-A** (port B reg 01) : 0 au démarrage de la puce = **voies ADPCM-A muettes** (niveau 31 +
+  total 0 = 63 d'atténuation dans ymfm). Un album sans ADPCM-A ne l'écrit jamais : le cri serait inaudible. Si la
+  musique ne l'a jamais écrit depuis le démarrage (`tlseen`), le cri le met à 0x3F puis le remet à 0 (`tlset`) ;
+  sinon il garde la valeur de la musique.
+- **Son** (`jb_toasty_sound`) : WAV PCM 8/16/24/32 bits (autres formats avec soundfile), mono, décalage continu
+  retiré, silences retirés (enveloppe 2 ms, seuil 36 dB sous la crête : écarte un choc grave à −41,9 dB dans le
+  fichier de Nicolas, garde l'attaque), 4 ms avant / 6 ms après, fondus 2 / 5 ms, 3 s au plus, rééchantillonné à
+  18 518,5 Hz (8 MHz / 432, `_resample`), crête à −1 dBFS sur 12 bits, encodé ADPCM-A (`adpcma_encode` : choix du
+  quartet en regardant l'échantillon suivant, sans jamais faire déborder l'accumulateur 12 bits qui boucle), complété
+  à 256 octets + 256 octets de silence (fin incluse ou non selon la puce : sans effet), placé après la V-ROM des
+  albums, aligné sur 256, sans franchir de limite de 1 Mo (compteur ADPCM-A sur 20 bits).
+- **Mesuré dans MAME 0.264, vrai BIOS** : cri isolé (même cartouche sans le son, émulation déterministe, différence
+  des deux enregistrements) contre `adpcma_decode` : **corrélation 0,962, décalage 0** ; avant le cri,
+  enregistrements identiques à l'échantillon près ; après, la musique est décalée de 2 échantillons (42 µs, le temps
+  des écritures du cri) pendant ~2 s puis se recale : inaudible. Album synthétique à 6 voies ADPCM-A : 0
+  déclenchement de la musique sur la voie empruntée pendant le cri, les 5 autres passent (une salve `3F` sort en `1F`).
+  Le cri est au niveau maximal de l'ADPCM-A (voie 31, crête −1 dBFS) : sur l'album de test SSG, 5,6 dB sous la musique.
 - **Image** : une seule (case 8 de la planche fournie : les 16 cases sont la même pose déplacée verticalement, avec de
   petites différences de dessin aléatoires d'une case à l'autre), `art/toasty_frame.png` -> `tools/pack_toasty.py` ->
   `JB_TOASTY_B85`. Détourage du fond magenta bruité, réduction à 112 x 94 px (moyenne des seuls pixels du personnage :
@@ -295,13 +321,26 @@ ci-dessous (amplitude minimale, espacement des objets).
   (gorgée de 2 px), descente 24 images ; 150 images, ~2,5 s.
 - **96 sprites par ligne** : mesuré sur la 2.5.25 (6 min, sans Toasty) : 89 au pire en lignes 120-127, 82 en
   128-135, ≤ 77 plus bas. Le haut du bloc ne monte jamais au-dessus de la ligne 130 (repos 132 − 2) et les colonnes
-  rognées ne mettent que 3 sprites sur les 16 lignes du haut. Mesuré avec le Toasty rejoué sans fin pendant 6 min
-  (20 932 images animées, scènes texte et sphère, objets au plus dense) : **89 au plus, jamais au-delà de 96**.
+  rognées ne mettent que 3 sprites sur les 16 lignes du haut. 2.5.27, vrai BIOS : Toasty et cri rejoués sans fin
+  pendant 6 min (21 457 images animées, scènes texte et sphère) : **89 au plus, jamais au-delà de 96**.
 - **VBlank** : `toasty_vbl` passe **avant** `saver_scroll` : 2 lignes au plus, ses écritures sont faites au début du
   retour de trame, même quand `saver_scroll` déborde (ci-dessous).
-- Tests : `mame_tests/toasty_cases.lua` (CASE = album / time / pending / wake / off) et `mame_tests/toasty_stress.lua`.
+- Tests : `mame_tests/toasty_sfx.lua` (déclenchement, une fois par économiseur, réarmement, cri et voie empruntée ;
+  avec `-wavwrite` pour l'audio) et `mame_tests/toasty_stress.lua`.
 
-### Mesure faite en 2.5.26 : la scène sphère déborde du retour de trame (problème antérieur, NON corrigé)
+## Texte qui ondule personnalisé (2.5.27 ; `core.S` : `t_custom`, `pick_text`)
+
+- Champ « Screen-saver text » de l'onglet Cartridge (réglage `cart_saver_text`, compteur n/256), `--saver-text`,
+  `SAVER_TEXT` pour `tools/tbuild.py`. Vide : textes d'origine (lecture / arrêt).
+- `jb_saver_text` : police de la ROM 0x20..0x5F (pas de minuscules ni d'accents) : majuscules, accents retirés
+  (é -> E, œ -> OE), autre caractère -> espace, espaces multiples réduits ; 256 caractères au plus, puis 4 espaces
+  de séparation et 0. Écrit dans `t_custom` (264 octets, `JB_STEXT_OFF`) ; non vide, `pick_text` le prend dans les
+  deux états (lecture et arrêt).
+- Longueurs : 40 px par caractère, 260 x 40 = 10 400 px, sur 16 bits sans débordement. La sphère n'alterne avec le
+  texte qu'à son bouclage : 256 caractères = un tour en ~88 s (texte d'origine : ~22 s). Vérifié dans MAME : 62,
+  256 (bouclage -> 4 espaces -> « START ») et 2 caractères (« HI », plus court que l'anneau de 81 tranches : répété).
+
+## Mesure faite en 2.5.26 : la scène sphère déborde du retour de trame (problème antérieur, NON corrigé)
 
 - Mesuré sur la 2.5.25 d'origine (ROM instrumentée : compteur de ligne `$3C0006` relevé avant / après `saver_scroll`,
   4 min) : scène texte 27,2 lignes en moyenne, 72 au plus (5 images sur 7 617 au-delà de 40) ; **scène sphère
@@ -353,6 +392,13 @@ ci-dessous (amplitude minimale, espacement des objets).
   - `perf.lua` : images sans progression de la boucle principale ;
   - `play.lua` / `tap.lua` : lecture et capture des octets envoyés au Z80 ;
   - `video.lua` / `video60.lua` : captures vidéo de 30 s et 60 s.
+  - `toasty_sfx.lua` / `toasty_stress.lua` : Toasty (voir sa section).
+  - **`full_test.lua` est en retard sur le jukebox** (vérifié le 09/11/2026 avec le vrai BIOS de Nicolas) : 9 échecs
+    sur MVS (Europe, US, Japon, UniBIOS 3.3), 6 sur AES (Asia, Japon, UniBIOS 3.3), **les mêmes sur la 2.5.25
+    d'origine** (« autoplay at boot », « A resumes », « D next track plays »…) : ce sont les attentes du test qui ne
+    correspondent plus, pas des régressions. À remettre à jour avant de s'en servir comme garde-fou.
+- `tools/embed.py` : assemble et écrit dans `ngt_studio.py` les binaires (`JB_PROM_B64`, `JB_M1_B64`, `JB_TILES_B64`)
+  et les adresses (`JB_SECBLK_OFF`, `JB_BOXDATA_OFF`, `JB_TOASTY_OFF`, `JB_STEXT_OFF`), puis relit pour vérifier.
 - Exemple de lancement : `mame neogeo ngjb -hashpath hash -rompath . -autoboot_script ui.lua -seconds_to_run 40`.
   Ajouter `-aviwrite x.avi` ou `-wavwrite x.wav` pour capturer.
 - `tests/t_robust.py` : LZSS, modèle du driver Z80 rejoué sur de vraies pistes, cas dégénérés (sélection vide, boucles courtes), fichiers abîmés. `tests/cmp2.py` : compare une capture

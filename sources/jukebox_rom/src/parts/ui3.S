@@ -146,6 +146,7 @@ main:   bsr     wait_frame
 1:
         bsr     autonext
         bsr     feed
+        bsr     toasty_snd             | Toasty : cri demande par le VBlank (FF 07)
         bsr     vu_query
         bsr     tick
         tst.w   V_SAVER                | economiseur actif : affichage fige
@@ -314,7 +315,7 @@ play:   movem.l d0-d1,-(sp)
         bsr     wait_frame
         bsr     wait_frame
         movem.l (sp)+,d0-d1
-        bsr     toasty_alb             | Toasty : passage au 3e album de la liste (V_PG = encore le jeu precedent)
+        bsr     toasty_trk             | Toasty : changement de piste pendant l'economiseur
         move.w  d0,V_PG
         move.w  d1,V_PT
         move.w  d0,V_GAME

@@ -1,6 +1,14 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.27 (2026-11-09)
+- Jukebox ROM: "Aurelien - Toasty" now shows up once per screen saver, at the first track change after the screen
+  saver starts (no more 3rd album / 20 minutes rule).
+- Optional Toasty sound, played over the music without stopping it: pick your own WAV (Cartridge tab or
+  --toasty-sound). Silences are trimmed and the level normalised automatically. No sound is included in NGT Studio.
+- Custom screen-saver wavy text, up to 256 characters (Cartridge tab or --saver-text).
+- "Aurelien - Toasty" picture: (c) Aurelien / Bouz, all rights reserved.
+
 2.5.26 (2026-11-07)
 - Jukebox ROM: new build option "Aurelien - Toasty" (check box in the Cartridge tab, or --toasty; off by default).
   Once per power-on, during the screen saver, Aurelien pops up from the bottom-right corner in front of everything,

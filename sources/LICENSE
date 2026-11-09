@@ -34,7 +34,9 @@ SNK artwork and trademarks, (c) SNK. The Delta Island logo and triangle and the
 spinning CD icon are artwork by the author (Nic034 / Delta Island), all rights
 reserved. None of them is licensed under the MIT License.
 It does NOT cover the "Aurelien - Toasty" picture (JB_TOASTY_B85 in ngt_studio.py,
-jukebox_rom/art/toasty_frame.png): a portrait of a real person, supplied by the
-author, all rights reserved; the mug shows a Pac-Man design (Bandai Namco).
+jukebox_rom/art/toasty_frame.png): a portrait of a real person,
+(c) Aurelien / Bouz, all rights reserved; the mug shows a Pac-Man design
+(Bandai Namco).  No Toasty sound is included: the sound is a file chosen by
+the user at build time and only written into the user's own cartridge.
 See NOTICE.md and LEGAL_NOTICE.md at the root of the repository for the
 details (what is covered, trademarks, network access, privacy).

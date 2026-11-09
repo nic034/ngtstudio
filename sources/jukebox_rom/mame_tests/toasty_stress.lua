@@ -1,4 +1,4 @@
--- Toasty (2.5.26) : rejoue le Toasty sans fin pendant 6 min d'economiseur et compte les sprites par ligne a chaque image
+-- Toasty (2.5.27) : rejoue le Toasty (et son cri) sans fin pendant 6 min d'economiseur et compte les sprites par ligne a chaque image
 -- (limite materielle 96, tout compris). Cout de l'IRQ : seulement avec une ROM instrumentee (draw3.S : avant
 -- "bsr toasty_vbl" : move.w 0x3C0006,0x1006CC ; apres : move.w 0x3C0006,0x1006CE ; apres "bsr saver_scroll" :
 -- move.w 0x3C0006,0x1006D0), sinon ces lignes n'ont pas de sens.
@@ -21,8 +21,7 @@ local twl = {}
 emu.register_frame_done(function()
   n = n + 1
   if n == 300 then mem:write_u16(R + 0xF0, 17700) end
-  if n == 400 then mem:write_u32(R + 1726, 71020) end
-  if mem:read_u16(R + 1720) == 3 then mem:write_u16(R + 1720, 1) end      -- repasse sans fin
+  if mem:read_u16(R + 1720) == 3 or mem:read_u16(R + 1720) == 0 then mem:write_u16(R + 1720, 1) end      -- repasse sans fin
   if n > 420 and mem:read_u16(R + 242) == 1 then
     local running = mem:read_u16(R + 1720) == 2
     local cnt, y, sz = {}, 0, 0
