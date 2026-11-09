@@ -18,13 +18,19 @@ The [MIT License](LICENSE) (© 2026 Nicolas (Nic034)) covers **the code written 
      Studio and of the jukebox cartridges it builds for personal use; any other use needs the author's permission.
    - You can replace every built-in picture with your own (`jukebox_boxes.png` … `jukebox_boxes6.png` or `--boxes`); a
      picture you provide stays yours.
-   - the **"Aurelien - Toasty" picture** (`JB_TOASTY_B85`, `sources/jukebox_rom/art/toasty_frame.png`, used only when the
-     Toasty option is ticked) is the portrait of a real person: **© Aurelien / Bouz, all rights reserved**. It is not
-     licensed under the MIT License and may not be reused, copied or modified outside NGT Studio without the permission
-     of Aurelien / Bouz. The mug shows a Pac-Man design (© Bandai Namco).
-   - **No sound is shipped with the Toasty.** The sound played with it is a file *you* choose when you build your
-     cartridge (`--toasty-sound` or the Cartridge tab); NGT Studio only converts it and writes it into that cartridge.
-     It stays your file and your responsibility: do not distribute a cartridge containing a sound you have no right to share.
+   - the **three "Toasty" pictures** (`JB_TOASTY_B85`, `sources/jukebox_rom/art/toasty_frame.png`, `toasty_frame_2.png`,
+     `toasty_frame_3.png`, used only when the Toasty option is ticked) are portraits of real people, **all rights reserved**
+     by their authors. They are not licensed under the MIT License and may not be reused, copied or modified outside NGT
+     Studio without the permission of their authors. First one ("Aurelien - Toasty"): **© Aurelien / Bouz**; its mug shows
+     a Pac-Man design (© Bandai Namco). Rights holders of the two other portraits: to be completed by the project author
+     (see `sources/jukebox_rom/art/RIGHTS.txt`).
+   - the **Toasty sound** (`JB_TOASTY_SND_B85`, since 2.5.28) is the **"Toasty!" shout of Mortal Kombat II, © Midway
+     Games / Warner Bros.** It is **not** covered by the MIT License and this project has no licence for it: converting it
+     to ADPCM-A does not change its rights. It is embedded at the project author's own decision and risk, and can be
+     removed at any time (empty `JB_TOASTY_SND_B85` and set `JB_TOASTY_SND_USED = 0`; the option then plays no sound, or
+     the file you give). Untick "Toasty sound" (or `--no-toasty-sound`) to build a cartridge without it. A cartridge built
+     with it contains that sound: like every built ROM, **do not distribute it**. If you redistribute NGT Studio, you
+     redistribute the sound too: remove it first if you have no right to share it.
 3. **Third-party components**, which keep their own licences, see [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md):
    ymfm (BSD 3-Clause, © Aaron Giles) and the z80 emulator (MIT, © Nicolas Allemand), both compiled into the embedded engine.
    A Windows build you make yourself also bundles Python, Tcl/Tk, numpy, Pillow, sounddevice, soundfile, libsndfile

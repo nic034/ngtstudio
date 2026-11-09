@@ -92,9 +92,27 @@ import numpy as np  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(sys.executable if FROZEN else __file__))   # exe : dossier de l'exe
 
 # ---- Version (MAJOR.MINOR.PATCH): bump on every delivery and add a line to CHANGELOG.
-VERSION = "2.5.27"
+VERSION = "2.5.28"
 BUILD_DATE = "2026-11-09"
 CHANGELOG = """\
+2.5.28 2026-11-09  Jukebox ROM:
+                   NEW  Toasty: THREE portraits instead of one.  Each screen saver draws one at random (never the
+                        same one twice in a row) among the built-in portraits: Aurelien with his mug and two more
+                        (68000: toasty_pick, one toastydata block per character, V_TOSP / V_TOSC).  Same animation,
+                        same place (bottom right, in front), same rule: once per screen saver, at the next track.
+                        Pictures: tools/pack_toasty.py (several PNGs, fitted to 112 x 96 px, noise specks removed),
+                        art/toasty_frame.png, toasty_frame_2.png, toasty_frame_3.png; 89 C-ROM tiles in all
+                   NEW  the Toasty sound is now BUILT IN (JB_TOASTY_SND_B85, tools/pack_toasty_snd.py: the clean file
+                        supplied by Nicolas, 0.61 s, ADPCM-A, 5.9 KB, lzma + base85) and played by default with the
+                        Toasty.  It is the Mortal Kombat II "Toasty!" shout, (c) Midway / Warner Bros., NOT covered
+                        by the MIT License: embedded at the project author's decision (NOTICE.md, LICENSE).  Cartridge
+                        tab: "Toasty sound" check box (untick = no sound) and optional file replacing it;
+                        CLI: --no-toasty-sound, --toasty-sound FILE.  To remove it from the program: empty
+                        JB_TOASTY_SND_B85 and set JB_TOASTY_SND_USED = 0
+                   Tests: mame_tests/toasty_chars.lua (12 screen savers in a row: 3 characters drawn, never twice in
+                        a row, 12 shouts for 12 apparitions); toasty_wake.lua (woken up: no portrait nor shout when the
+                        track then changes, re-armed by the next screen saver); toasty_sfx.lua (built-in sound,
+                        music voices untouched)
 2.5.27 2026-11-09  Jukebox ROM:
                    CHANGED "Aurelien - Toasty": once per screen saver, at the first track change after the screen
                         saver starts (was: once per power-on, at the 3rd album or after 20 minutes, then a 10 s
@@ -2516,155 +2534,155 @@ JB_PROFILES = {
     "extended": {"name": "Extended: P1 1 MB + P2 8 MB (3-bit bank, homebrew only)", "prom": 9 * MB, "vrom": 16 * MB, "m1": 128 * 1024},
 }
 JB_P2_SIZES = (1 * MB, 2 * MB, 4 * MB, 8 * MB)
-JB_BOXDATA_OFF = 0x20ea             # = boxdata de core.S (mis a jour avec JB_SECBLK_OFF a chaque modification du code)
-JB_SECBLK_OFF = 0x5f5c      # où le bloc de sécurité du BIOS (122 octets) est recopié dans le programme 68000
-JB_TOASTY_OFF = 0x220c         # = toastydata de core.S (Toasty, option du constructeur ; mis a jour avec les deux precedents)
-JB_STEXT_OFF = 0x28e9          # = t_custom de core.S (texte qui ondule personnalise, 2.5.27 ; tools/embed.py)
+JB_BOXDATA_OFF = 0x215c             # = boxdata de core.S (mis a jour avec JB_SECBLK_OFF a chaque modification du code)
+JB_SECBLK_OFF = 0x629e      # où le bloc de sécurité du BIOS (122 octets) est recopié dans le programme 68000
+JB_TOASTY_OFF = 0x227e         # = toastydata de core.S (Toasty, option du constructeur ; mis a jour avec les deux precedents)
+JB_STEXT_OFF = 0x2c2b          # = t_custom de core.S (texte qui ondule personnalise, 2.5.27 ; tools/embed.py)
 
 # Programme 68000 du jukebox (jukebox.S) et driver Z80 (m1drv.asm), assemblés, compressés zlib, base64.
 JB_PROM_B64 = """
-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
-/8JNXv8HZyQhGw==
+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
+uHH9WqTnu28vX7p44evz5852n/7yi66TJ44f/ezIp58c+rjzo44P2w8e+GD/+/ve27sXFxh279q1c2dbW9uOHTu2xwnvMG7nzl24LrHn3b1739v3
+/v4PDhxs/7Djo86PD33y6ZHPjh4/cbLriy9Pd589d/7rCxcvXf72u57Ites30B5cmZQoFnyTbE8580A04/4/9eQP+dN9XcPuNR2zJQ/IPWoaf9dn
+1q/uHvvd6XtGRMZ0jBg99OAoMSv72I2RuSdGHL43S9+ZOdQ07P3BFuu+IRdsd3afG3zv+UHv2W6/Y09Gf0v6AeNt9va0zwpSrh0acA/0bxudPLat
+XyQn6ci3xonHE/cV6Ae8K9+ZnrArQ3pgj/hlgfD1ydh9f76xw3Z9xI5rhlGRg+LVSZ3ffTTpinTw2+zEP7cNv5S780+X8i50ff3NhDPn38v/KuPd
+c2mDu9/vf+b+g6dP3n/qyrEv7ol27R11cuR7J2LZx49eO3rv558dyjmS+PHhO/p98mH6obs7Oy+O/ujC1x3Zl9s/GX7wtiMfGNL3d+neH37mvXND
+98bOv5sm7D6dvGvANzuvJ+3An2JDwoMJDyU8nPADebbsl2vkOXKtXCcHcKL+qDxffkz+ofyE/kn9j/T1+h/rG/SN+qf0C/WL9T/RN+mb9UsMLYan
+DWHDUsPPDD83LDc8Y3jWsMLwT4bnDCsT/znx+cRVif+auDrx3xJfSFyb+IvEf098KfGXieuMLxv/07je+Irxv4wbjK8aXzO+bvyV8dfGjcbfJP02
+aVPS75J+n7Q56a2kLUlbk95J2pa0PWlHUlvSTtNu0x7Tu6b3TPtM75v2mw6YDpraTR2mj0yd/Q71+6Tf4X6f9vus39F+x/qd6Hey3+f9vuh3qt+X
+yaeTu5PPJp9LPp/8dfI3yReS/5R8KfnPyd8mX+n/Xf+r/SP9r/WP9r9B3lMBFF4lv1JYbPEn07WLlkKynmRZbHRHDh9vAlel9fbS4qAR3xkZa3El
+HB4fjyvq1tvx6mG80lntS8ivxyrxWrbaxTy89uC1oX03/QWGuW4brhSK5PdGthb2qxipxU3rJb+XUAKug6XjutXF3HbSFnw7XBwQyXrKQnQhFhoa
+kmvSFuoa+tUkL8QfdNUYrBL+WgB/4ZMD3Y/iGl//DmcCkN8LdJXQ32qLCTu7Ss4+usxZvuCcdDZ8VuoOd0tnwmek0+HT0pfhL6VT4VPSF+EvpK5w
+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
 """
 JB_TILES_FIRST = 0xC00       # tuiles maison de l'interface dans la S-ROM : zone de remplissage de sfix (0xB69-0xFFF),
                              # jamais affichee.  PAS 0x200 : logo SNK et police double hauteur du splash BIOS/UniBIOS,
@@ -4277,41 +4295,168 @@ vBYQl0ssI200dcD
 """
 
 
-# Image « Aurelien - Toasty » de l'economiseur (option du constructeur), deja convertie par tools/pack_toasty.py depuis
-# jukebox_rom/art/toasty_frame.png (dessin fourni par Nicolas).  Portrait d'une personne reelle : (c) Aurelien / Bouz, tous droits reserves, PAS sous licence MIT.
+# Images « Toasty » de l'economiseur (option du constructeur : « Aurelien - Toasty » + 2 autres portraits), deja converties par
+# tools/pack_toasty.py depuis jukebox_rom/art/toasty_frame*.png (dessins fournis par Nicolas).  Portraits de personnes reelles :
+# (c) leurs auteurs (Aurelien / Bouz pour le premier), tous droits reserves, PAS sous licence MIT (NOTICE.md, art/RIGHTS.txt).
 JB_TOASTY_B85 = """
-{Wp48S^xk9=GL@E0stWa8~^|S5YJf5;18z>iCq8#fwN5o=<{DyC;C3Z@|Jw<tVVA}r!m!@LOye_=!4r;RdAdW#}%;6buD8*Uk3N>
-p6Iq_`8o+6BC+yNAt0ii#23a=Fdu!z&B0pXVk8`nkk{l+Nu2^W?nOXyY#cn<MqW{?f>%@uNJH9f2ZszXu#FdIRG;*4b+AI>!jT}Q
-JU_?4gK>0g)qj;vggmnwnG{pC`zv|+NfVx&i&Rt%D;i}}#PgAsE$c-sqDz%eOtQSGn(6U>wH|wA2;m=~oZS_BQu!-;CD+f9cK|#9
-375<;Cxv(BYW49|>cB&zTWT^|aRZ%vBhTqc=mi07*UNMi<@tlL7Y}KFb+w|(ZVB@j%<_J?fw@Kt>n8#SKS8XYW)h|>2!6D!i9XT0
-?r_1J_}FnRoh;%fKwt0!QpHMbc6a)-Sl7f=@l&O7SjQfk3oG^`X138O1C%5B-gk)m9robNu#X8#x#&V-{E`x69OfuV$04>L5NFwt
-kYKSmHsIjg#6`ZAxST*89jO!9WFAEaq`c2|$~2X_3A<ZU7cUlAR~)|4c!-B7mfzCq2GO^(f+rihq0?|!rQ>EZ4n|ITltyQ~P-_;I
-V)oF-7mLmuAQ1@*1>Hyy>rWR9yWqv&gbMzqric2+)&tit3z@nSmVc^srWQG4pntz5Qil`u;Q78qv;Z(&g`OnvjVIrr304lj3KjlZ
-ullRAN~sW&Bv2&d*QccV*96$9kS4y*i_R6%it~kOfTwprX)kzg7Sw4%FjZ2-6y+^YGtLIkZ=xZ;lKbxuIhBEWJUL!+;BV9x%`uO%
-*!JDs(@;WRgxL};4f6*6k(T^Ntj^1#Qkh5zwHHHA;f2id0o{!TQjTgsLg{=9E^o;BsJa@k9=Q^Kfei;IM%bgl_=C?^@9T$UnMBe&
-Jon%eo3+dF;7Gn^u%CT}HSQgEI$wzHO`)HR7#D}Db&r+g<9=A$uKvlueXrML2(j2~?XhuBV~Mre@EuWlJP6y_27j7{{($lv9Slb`
-C>FGL7xPBb#?eA-U!<BE!m*^UETwa;6Rf$6PM+{90T(v&9Ut|4Xp>3e_+lf*LFj*JUfY%2S@Lf-=9pF-jNx*N?0G3fmq7w_K;B58
-E`%D}jT`Ic?tCb29-f@Z139P-vKp|y=DDhl1O1?{y^l8l=H8{01H$NGu`)4cEZaMY+o{QdVctVDvthOpbSN{;W1ojedvp`hAfTKv
-uF|)$UjU|qO1oAJnL|o4e&_ieI;lc?J)+NPu2#sp*v#5xEvR+{uM&O<(0Q&oSE`)_&&a9S4Nk5(SLz6%|7(>}V?*ji@m6<vVw|F{
-USL|jOj4ET%S}fr+?BJ;>A4yz{E5|#Hn=8w>)j!fp#@%6kjfu4A)1)p?N*!%Bn+B!4w_(3Jl>l`*bZ2V<vVmlFz<T|oF(2Y5F`t5
-I`BG2G$Ut*!x1MnL}Qa&RlJ)uvhTFFj-`q9X8j}y{^P}FxaU?(1sSn4rol>~DWuG<66ZmjNE6!sw0;8>jsJm@S+4gMJw?=^dC(?A
-*~Tx9wW=n><x3&jzlJvF`|MZGWBm4kWrFKXWM>)(nU~}yJF7I4u~K~?$LP8t>G#ma1$fkw{m9I{<-?v&YOTZM#nDZwNO*9}oDX<}
-7ULOzNvNfWHSDwgJrEAkEyhWQggr|ZOln&V*@jdU1ZVh{;#-c1_}E2RXj_SvaYRq&mjbwb%4uYjuu+k>s@ZAB55Xy7c77D;9EB+x
-4xc!dX;BBg8l9J(sV%MNm{rqI)N4X|tK&XrCk8#r-`&BSF3mW_{Oj)PQg6xS3kr?z4E?%6?z0f_e8*&hhHNo*+>#HlB_}N`vR5XE
-Ww}C;_3#D2=~k3z9=<rN@J)-*?JCuZ9)bka1dB4o6;?m&R~<WUvF(2Dlh6niyIJAPg8npqE+R?Jz-qoeax+f8K|_1525y<ptr(WU
-aJ}82o~2lZ=0-iH;F1s=0tcQS^iRDFKFIsTPWdt7bSLkcqULsR^-`~xV9_l&jV_J!q>gF20a??Nn8B4tOBxtyAGi~JXi@aVJNDiF
-aoZfzORwAf{AS>{zT>UN8Ab+2N)#<anaa>nZN1@FQ19r}qF61j$6LvI6+J3kEF2o-ZP8$iwopVF)7=fIr>q$zz@VGjtes|qGXx*?
-kGN^!9LW8&Pb5~{$wi>9;Rlvrx+q3lhFPQo)MO{vuxxi=Qo%jJMoQnmMBp=cD!gz_TB07;C&(Y2m9Q*TXsU%?=>(Ey*wH*-PtEm`
-d14*vk_Fi#W-9O1`c#t(jAGiYtL$0MJ$bn?a13aZ@ft~Zxg=vrtz@u790}sakx$>+4JY6?#>cK=Abs-d(Y3ztb|D$@LHHY^upv{u
-Up}kBF4rBIX1;BS;PcD>jfDY}SLL@oBBh^!B&HBjDk{dO(*PG|a?Bs;QlkR<p~_T4@fo=Hq1U&nG8yWUlhmKS!LsnF1a2h9Qol!5
-wCb7LRIIZV{{nyykZoXOAnY~d0OD(!Q~ny{rVCbPQaj#&S3M^-nit5adJhn&{R>*bs{6CSh=8UG4Lm2anu0%OGlxw=r_2GYGAU}E
-7+DJgz<(gsF6UYQ-Dh*Kv`P|JlVw*Eia5Bd%((^6D|_LZ*i3GP3!3E48wO+(`yluD|K=Y7yq;h1Z6aNSnJh7QSZj7EZ~}2g*3(ty
-I_Bz0X4+J4-0!$mK}iT}OT5>1+p=(iIu#H<^vI3sMq7Snn>JLUdV&tU8H-4Vb}_>1)O$O(rzcIUDI435V{8uL&7BoN2-4sRP;qqq
-J&r8;$G=UiRz5@Of7*?Nx=N^G5L5g?Cf`*Uph>n=4I6o6bdP*Pr}-W@EDp-7Ky3K%bLSR;<E0GGsgBw5Gwra2A(^!|5Y84n-Vj==
-_L?=usODEtHx}MPzd7~`$2Yr9TC=;l3#j#GsYj67^$|Z;dVmp(C(j^5<<?LA2AqM#J4HZ`YBMHp0cADw_q|tGO3G^2l1dkD^68jz
-nQS=)C$J%3BN$ECKcJ#V(ppt;SuscZO75&r3*j7|I;Hz`y1@l2#K|W}&TJAzMGDdgnZRg==F7Ld%Li{;6wDLuDZ9?S6c+g<>VOlp
-788f_RvCQp>2ujxdVBrR8ql1I#44R9BZ}sXTE{a+bD63W6?o&wHt|I@3v6z{ZYtc<robKGVIY6Ab>oMwLW9Ut#R=L#00000osF{&
-M6zu900E^Fs2>0Tb!=fWvBYQl0ssI200dcD
+{Wp48S^xk9=GL@E0stWa8~^|S5YJf5;4XR^(_H`ogj2uB&180W$wa3h<BW_EMoD86t>u#3;6gEeK=Zt!K6_68V#FuDmzt~MTM{Pd
+h}Z5VFjsfh&;mM>Wl0(B7;eH@xOB6)hZ+x^D?abRa+@~OjXjz*`rwM4L||d+hqC7LG4{b#J+NC=)2Jab_?xs0xjKnHF3URU)`g?0
+1!Ft5BcTBNnBx~N^j}j_Cr~8;;#3VGzz-qbus3P|iy}o3kw!#`X@7Q$u3iKZFYMM{j4SNIT5hFY%+<gD5Q!?Z5~p!@GFCj{PR;Ne
+xHR;YpSj%~x7nHR{sLK!oNE7D0@6yraSWvMHJx|Yl7Qo>Wr9`dGGTJXdunk0Zp`@zxEyLa^(k7qprNoISp3Z|zp)5{8BF?@O;S9b
+WzoI}ARXgBvdMQ(a+BY)Pi_5B`B`-eg9zH3aTa+Vm&L?RZ57BswwtIGlm04xn?g9vvM1jRLODz-<JQV3YLqF_YIgUypDtwA2pYu=
+1u@*~m%dg`McL*j#^bwsQA|%F^f7iQHbJRcJfPgpBri+rn%124d6gYl7~@L|OqCdw$;n7<+M)K}$lXM^RK#6?b+Ha@g(fbT{t?e-
+J>uK*xIoolBNW<_-hfng%CL}ZI76ZSjQu~yO?%+>;@J>E_f4I+SD#gzieiS|jp8>L{L8#s#Z`hGi>nU96Y%|RlPBhlYT*5v*}iT-
+LJvw_AQ_+}ZzHL0Wma@JEE<$z{@`{$Y^8!V-<_?BHHfx{%#fequCqzclw7t*EWpVUnB)2LJJ7R%MwpF@dH7X!9QhBYF$V4~b4-J3
+7hfv3pQmS*6_pbh$QncNeX2sSy~J)LRnbpW%&`7Uu8nZOkVlY70!Tb{{s&seBY8a8NA`*i1u|ThiKdX<bGX64Ig-)%vooA_H_z`p
+X9Ml6o4<5X?7s6wxb;)uOU>}sy1(jAL`mwQ){hrRSODap8|aHRfuLYX+M)^Md0%p^7G98+sL=*M9)#-6L=<b-bbZfzFoWWBCrb*L
+KsBenx;QX)Y<AfBr4LPU7xq&AEBefu!qCi?TTVb)ve^cny`b0Lm$VE2G_CR;M6BLYCE{DY<@zRWmm4WejLRXI+F4WN?5>mT$me!l
+n`~bNUO!z&O@}5cSM(iNhlPYif8y)P@W^v26gl%Za__v2Pf1GavM%nkr@$;z-@G5v9Ik5DA8_NEt;+-I@>OBjOUTXzdfwkm>5^_x
+Sf3Mc%r&SwjF#~WljMt)qgdGy&M=zO`l@G=$QE$;5S5pp(?T#Q^@9Vq(W>NC+_0}_@c}I_FI}5ebLq|Nz_7WmRpXR8PTt?oJSDxz
+e}7^)=EoP5Hn?b}d7G&IkkodxyiMK$2-7uowuOHau&sZ<vvKrTqC7mf>|Z`-mFb&ANaDEb2ML{#<UO0@2u>=Ojai|1#(>z(q+5f+
+8hgZHte`V8nz;X~yq$%%ScjE2w@*1zWRsV7Wq3DH$ZEKIFu-de``vehO9R)IZ(&Y@ZTRaOE4q}-7^WIKHdHj=e36tl??M(L4dX?H
+deJ8!I^W;z{cLvJ=5ML`t@!g@^7tR$N2rNp&LDWZLs~Z{0PXzR4TtA%K!Ti`-Lox5=TGU&x8qYUQj#FB|AuEZHTb{y5aeJ}YhfM|
+Sp}A?KU<UP>hykly5`@;BHwDU(47mteRvq>MEZu-;sx46fa*$0W=P!C2KPo(HJ5lH`L^MrmNn??$Y2h+U)S!2Cd%41;OVQ^mI4kK
+dckcx0Y&5>eKj@2YOTyxk}W*I)S}I|tUFN}0x9XGx0<6_MWTlpZASxSgjP}DuQD8=g1+4Ncb^o@S4?8qI~x#5My%5dfW}FpLT4=7
+bx<<juurCyu{Yucj<iCWHb^9T#zE9(MBaK)%IEJ~kU|oV3u3`_S#1n}kcGF7s&@*8N(oHj0&8s=bh!i;ZPIoP5iP@55>pSG&OMKO
+GBV082aDPhyl1B9fkkIuHhz&D&n;YKzk9%JIxw8HEczSUNc-x{v_sG^H0q90x#X^eLM%|ea)jo4pdA%HsurY(^V2>*j|{ua{=b&t
+{RgbwG`iHtLPzKqo-S8Br=cowfTPq5P!D1*?~A8_T^K*6hA~+Vu?BpRjH2eVqx}CC4$z7QT-}d>Ezn@Apqc;{S+9d(=pqi#a6}HI
+6d&-0Omsx&qk2ruE4jAeB(CYJDc-Q5(O$q!yn{;TxagJR?*<9PMnHsq-V8n<g<D8d)WisqLx^Kv8;L`@EX|M&<f9>a;1mvrz8MwV
+?3am=l+8s4@*(pf>J;?c3BOR$7|@8%qc&C8g%G<Y&uJ{wSD?4CQ8zOyNo>DxX67(MITR9hrEY#|SB;<_a5UYS^1eHFMgD#Op~!yL
+t&^*SYozlI>X@hYOeRM}D~0@!#<;uFFt~48>v&d%61rk8Kv7So^TzTnffxFf6W01vrs^ZkIs22X1D?sBBAv3A7ZAllbFiFyX48bs
+wCglI8N`!9P}5!2PXjb}<`Q*wW{cl+CBQ)7gngaG^h0reSF5=5n%W<xuBiS3>A{&a%h-}6f}yZMZrTZ`VAf?#>(ZgLZ%hR>blLW1
+j~NL+@3wuI)I3dXq|(Wvi=<#c)Aq&w**{3b28?Z;KMzp`HC15#RCBOyxv(87GVREEL3USJ+U_uug;O-9CG2S{y3nibL(%?HFm9wh
+)iXvY7CU6;T6PC>47qe*`E^c@NsG$}5NcOY!NDujw)7Yc2}VUY`kQ}^P&crBjEr+@Yj}IH7!B&SNOue?a;6yz^R<X8t~`EZ_l49h
+P9H@K*rD*81#?=GlPb8d9!zY)R<t%Dr2W1~fe$`Hzi5mU;K;NZ?P(WzMXzQWFxPP=aTU2a+wuP{gtcd&>`<SwBTW&=Jrbt`24J4;
+!{}db5&xrt*=Pq1j^A3t)~-Y!2soc!#~edEq?@84S$?aA!8zIMvV5je1{~jpXNafJhlS{_gO!TY?WbE2PF^z)Q9chD5Vu1#$*uYE
+Z}?mkhU9{&?oP-kDE#+`7%_G2!_Ne@Qbo(OSP#Q^xwb^@pdWt<f4)8;mVr)RYvOkWE>8+r{T%N=pG9_>M~7`R>}Pw-|N4ABnqA<S
+Yv>zeSitZp`cze9-OMV7nDk63lCcuf|EvaMLe5A5+mA^*I5x^wJ;l!saAEf}WBT4{j6l%e|6HHRzT*XjgHWst%#y4jeq%4pj|O{*
+FJ!I(t{xB*V0Yq|3OG(hUy8WtVt$q9Ys*Yy1&|y1n$14<y;y*WV8$5qH;NsK`7Y~15O~51<BfO&=IbaTg`8mCxK4IabBZs%>#!&G
+ntdyHGYxE@5xB!(!jWrSm@2dHiN6s9?52HFs`ELtLo%Yri4hX;`bbt^Att|p@|$pcg`$*6m6B!fb#py8^xh<Yz|uwn<($w{=^~*Q
+6tsMk4*d6Y7>lX?I~2n}EaGC0B7Q$6i^amDAu+c&OHP~`9+f(frMwcweVi13#!Mw#Mx;G^qgy*qkD;u#jzyF9GaGW*k*N|e{wN#X
+`*I5I&)j_M$tKK*Rae{tSoy#gx^k4UM;B=`OC-o)qopR}_}8DNWFhd|`w<rmCHra@e&Y5)1$ORzNj(!Y4M5=$DHHKqi41Drt)0~P
+H^^Dk5;YzQZET!sx~6p)&+@lS?R>~!iYLwJBE2T5-T@cID`OTRhiFp^DHIK#POp<OtP@Fi5LD1j3ig9gxB_=IJJNY1K(zaIvJq(@
+899IWLVe*4ah~zeF)L}ncR<lL*)o?0)sG{WU>MGk`Jii`Ru)Z+r91t%xQv3_E0v6uL)@i4+ixk;axl|ODfC2HV##Pl`CR%eu}l+`
+h(N=pHRUHZfWp?%c#P+?VY(V01(qwYRBgN}-aDU$i{Pto<UscMu<YLd06ZMeQQ%Srz>PUiwCP^Z@ZFT^7U%dwfaY0uS=L1za+C>E
+<B8AJP?Ys~;=i)zF0IwISrssdd^;$fW;^2DB-GIvdkUw_8NpHKuIYfhw7sDZ<!>aQ|A*3nV%EZslraEI9|y3l+hU=SqWw19q$d$4
+-}zfsw&qD1%kV^%A>qR?q)*M&9}KgW#@>;L1>WgSLdxf1g^<}0Ba<0(5i$5pD57xQ|C*A$R25Ou!HQJ2;X=0+A>JkP=h%Y1O%(;T
+^j<ic<#P}wq?{|bz63~koXe)e;xAB$cDs=<)g5a8D|)Y5y(H0z1c#IkK3=$}{~<dbjlUujxQRiomxR?wa6T7Tg95<GE`sk%4YO@<
+jZ5^ZPTZuhJUH$zfVF_QQ2MmeXa2<;VF%_&@5j1}$&8|UAfor<?x=D@?YO#xRi=|E`z-VrXOaAwrLpX>DG_4+z`hN4gv4~oa2;Xa
+g|%1MRirvc848;52v15B$i4x?I;&#XeSxg?NyfJX8_-}Vvo;f;eeov<$luZ5UWlW{bq6IJ9wf&=MtrHnQ>#LJYqN=;Ckv;D2}%I<
+-l$f|`so}gji8zSk;fa{XcDc9Q+(t_=ZERiX&1W}(ZjYq*44ap9ebOEdck#q{xBt6vPUF$Rk(i;!Lj}#7rCCr;{D71Fux+HMtmFQ
+2TR^V`ZSxK6ahL<hCwGIDF(l&y5ONsDAb?(;`ZQy5!k%oDk>&3XyO6z_^_<Z$+;|tN%-or9DaJLw&}E}a=%CMi7B*$WV-LpuGuZH
+qhd(ZNi#F<WYSf!Fy-J=m^!A3zJ`Wcb7E|_9JY*=vAv$pxgED;_5?{$MlY(rckfBf_^NugkkG9gL*##MVK)?vqocR~Hz2S{0OCGU
+bjXRTLq1<H&8Q)w`(YB)pW)c4_+1)R6x~DCo%%RavUSUMo8tEXzzmcqM%|rPxFb#tJQmw4EQaQ|V}k*3vO%$M{;^<?>V>&@$tkxT
+DbFZXS!SkIkpBUM&tQ^<e&Yjz(J_HCk@hW+8+ZEHPN)=y;W2^7Msvq0Yc+o(qmmo5JM)1}Fk9_i+*b6ta($Q)+~9AmsO(FKk*VBN
+a;DrnNozt<v^U1Lir{W;2+r%$3zZ+eBzs<qdtW?$bfNo!l*7?aYT4H3N#%$%Cpzxyb$bFvApGwjf@zkP`#An1THK#{dSK$e`!>Y|
+6425|9z$#>kJdZ23xNaq#GFr+OluA+PfAqtTG8*UQmAhKL9`7p9Y|tk|3cSXNq5=|r{$T=4(UTy>ZoBdCf^v*XfA6X=8-<v5_e}r
+0`=LAEgQue;!5i@rifA@KJ6wtzl+1ECoO|uH#boLaS;DCgpIOn=*Ld<fz0E1K>P-&2hQ(Rma$p12iJ&sfp&WXY+L|l;Bu0F6!l}-
+N&tg4e9v#BgsM^1oP7bH)mGp0OLD2MkAmztS&Ux_p5UZ1hG+>{V}~R@#rWhtYe9n&m#I-cpNY8f;%PoTQTwI5jz5T%B@ZX&=gCnQ
+baBWOufPeh`$<*4%SbRsvU>}-Ix@BZ;MuABtH87(;VVTHf*aFJnZg5`sS`d)J!ZG0rj@Uhmv05luh6F)8om%0Ob7Eue&j5UFQ<_g
+oJTAU2#|5_K?ej$!2F|luRE%Ioon1wHIRM|f{t^<Zi>cd1%Uud<SV<12AFQX<9S&0cfk8A?k>Ak4sD)wxmykgwPN&<UPSG}Lx%?R
+h&(=T|A2t{LDB$N17%&b+P-6m2_AVz(PzOF_eJf9U|wZNbb^Flf*yFJSZy{aFQV-hX(8{T2ZGV%DFM)Kd)@8=-tyh`hIK_3>|X37
+lYnQ-N1O>x`I~`%vO&cgH$op15kI8yUHdq-A|U<a+z}Yn7e$g^3!1`djr3%~2|9qJwL^HkmZDz5|A+WZC6q`qI)Z!nw}}V4h;R2}
+m)Xy(D<&wH`4<h)OBz=iiiVE>bSA0^TNc9o@K@8>NE5{1)ckG(J%HONQ8!ybrB`3>FJ$aS^_?@WN$O;Zulk;B!(?;Y?X#_b#)Z`B
+(eMES)3!z-z>0u6)L$hVy@;wXp@aZw7xj<U?SKdkgI$v6C?VV2&6`X&93qBj`@LL!yrquD036KJt_G!cTzkV!g@k$GPVdRm?bZUr
+G`4nzk#r{^9ZE2O5^v0A7y_nxCf&5jk4;b;1bj{JbLzJ5a2VdwgzM65kMn0(Q_R)xUVc=U^t7vH_o2{Gu-+?M1!8jz>D$V+!3LZ{
+O-O^v#sG6I3H)mu%Pa(es=_=R+`+orP-;g0mj)VnuRuWwQnhX4sD`vUY<J0}@biN>>b0hC&~8Q4bv)!s1v-^S5;>7<nE&YGBfpd_
+>7*i;CT%pct8ZK{V#hXnwM#=0Kgq$l`~n@c_7Gt-9B7lUqig%C!cB_%XS*hIy0_Z~ikn&PbzW+iy7<$Q<ub*Msi5|N9bR+R2)I@1
+UdKgrYcxO)yQ94E;lw=kb=M9N4>)v~1*qG=oYut+49&QD1($i_8%_KZS;r6$KB5Om%wyxeyj;csZZdC4X<{ISz4DE;nUlGyDB)y)
+oF#Kg+YO~H$35BjZ-ID~A{6%FEYd)#<fB$Vz2hxKg^IqCBljI2^y@#26hB<57dZ)?jW0i=_FZFkc^RGh(XwJucAOO4dbM>h4lpDv
+njSVMmHtv_|9BR+-gP<UunP?~s`2=8Gsi;zkd{r0ZHD65ofIr7to0gYmN`#SO<;dvIkvlK3g`-6LB{eC7dGB`vyAqp78o=eIt{u?
+Y8azwh3^nG#h#I!Tzyidk4rEUj+&YpG^?f=#i^OnGB$=LH09U+Wmb|arg0E^FfqO3Gy{2|y%KTFf@YLL{`o|9{TU^;Kf@e6@Tc9!
+@=GjK7Z<Ahp2y91!|`nT#ej>K>T55yj7Mv?>p_rKHP=IanFmKbpHO)nDHTep^7PjHg`+<jd0asXv0w&^?EtStxj4`cej?^Id~u*7
+(@T(idC0lqtF>xDTbu2xS6ETqNO<TAn}k+o&gkkLD*TY$LO3(Kf2*t;-siJ(;1FttLF`cstRchCtENOv#h!0?JlbRQz6P`oc{_jB
+jWv;JRTs6QL9%<u_R0)#ck(m+SqK2&YzMjWHYx%VWBFmE1JsTC=P2VTD;4XNm={w)mSG>m>>MphL12oIgvwY-5u>HwW1WiJf2vn{
+w5xkvG<s&b3LVy2Unb9{(IsJV-@~eqgExpzklE>An`)(*dRJDky-$=90~#naTdg0=ZX#9i+X4sOk5^moj27AM-fJ^RKPGzDnzA4v
+FDWuLsiXrGHf%!9RgF)~LO)XH6}EYg3hHR7D2+622siN1k+jKO1Dwd(v?3-`O~g8q0po@epRUZ_*M50TI_fa`zYF9sVspW+Id(;B
+fjzxOM?0gS9<@m14Fr@7DyTHDrdv%NqH}vtn1V$e8)V-YnMW~WU?%<yRrjiHNM)7LZURt&lX=LmAxtF+<l<{R{fG)bZ*g;#8+*_i
+7<68G{L#*2*t-1=Y3F*^ll%a~#FpdY+XHG9vnwnvbY_46=q4)%N>8}G*+~jMqTEaLt}L4OrgC6)oJuJw*wLdSvB7T8R+H6+vA#=L
+?7oW_E={tih46S0m`p1<iM7ZHs*t#W@F^S0n3=$bCMOO<@gfyd2I!J!W*&U4RsiYur{%~?qs4TVlEdP3YjLTHteUF;<y5KW@H{9S
+Tq0F=?enOfV#5@_85&uWf~g!n@T2c1g_tr%1d@VL2@p&u{t=~1JOp}zH~oyyb_MH;0K~HzRni(VznPqJ^h+D*Kk!zy#wD?+UrfqP
+Z|d_h2hV-jrbVD4oLxG=S@XFwwtC;Jn0sedz(3_v<botQu=|@an44nypL%=^{K9{2^<o%mrUe|<8{u{?F7qevY*o&mK@zaUT2bF5
+05|LfEd*V}OTBqddzaIM*HpDA1aTi30^U_=JD?CY3>Tn(235h9{EQ_lBeq|Oq<`pFA7|&i_`xsdmoq#S1twZ1UgrKas<hDMl3ElP
+t^m*4jJVGl$L^G-v0g$d^|WhGtYB+xX5%KvOT>TXG;3oZW`$q5ENGvcYf=?0TDeytR48zvOdNLd7f<k@uV2xUTo>Z$cvxHB?qXF-
+uecObyx<1ltT{&b*)yRFSGJDmgiCg(CIFaoEfu6lyplF48BS@TB`*V7F%YSx2a_7+5&@{#Wf2ziM<)P`Yq}}Nvt3p&Ka(x3e6t+7
+*&MUB2{!ZO%62)7o}SP?3Ca^dHYuP`jHf$Y3q#s6Z-7Rn{G9QSFV+NS;>+yGdeV^67MC6&3myEb@HK%vb6bq7tKOc~?203GS@c)1
+%B30S*@#3$Sp?5!0c*=5T73BB^}lk#!6SRJKWDc&<{$|*ik`GNd@f+6YCTL7@MU5j(AmC1QZ`@2hh8!{$3ozy&KN{rH_fvOI?0N!
+OL<W4Cob87(rOpTztZiOvbL*UdToltNpTi;n2J<#Da3W{>j#SV`pXbR*Vke9lMrYe(>Xaw6*ooab+_z|E}k@p<~D%gItXe`Es#HV
+l4IbM96Qc&lIh_9+f_&+?8QoGEX!47j1`$hl20RbXI$Xqa|yrtT73GC%=vd%3mkfgd+p7`g`!>n3}ade<5{%61PpjUfq`k!RiURJ
+Fjs{ODCEzeC?%T)U%%RlVipJy!ImI)qpjRf9EvuM4PAQP?jD#KII-QQc1Oo>enY35#jT82(JD<MLB~kR*akGPox^}I>n<3CNm!)J
+0e00dBr3|(pR#E&x^F7Ew_+TiMkJww!MWmo3R0!UQg9&b2$(_lu`K|dVgXq&9>w$RuWr~>qj?KTj$}Bip8m(slAFs5d9@qHzwlP2
+S`Hyv?i~t(uCIAV6DEDH*^G%L<o|y~ZaThm3*e{}aF6%|?cJ0N_fpEn|8E{A<!+Vg{`DPR`lhuEWqp<7G5{^mjeY3;5rBhjq;-$-
+DB?C-5{0#5fUT)r8S#v!E7f&m=xLlxeTGl(rJ(6nB8Zqq0W75+Hi5gK`ein)^X$M@V1>;NCpxs;1Ybw63RGn!SBkpaN_^Np7tJdj
+_L{q-vVm_&6UqwW#=Vqe`v3p{5lq*OWveL600Hkc`&<A34h%<mvBYQl0ssI200dcD
+"""
+
+
+# Son « toasty » (cri de Mortal Kombat 2), deja traite et encode en ADPCM-A par tools/pack_toasty_snd.py depuis le fichier
+# propre fourni par Nicolas : 0,6 s, mono, 18 518,5 Hz, lzma + base85.  ATTENTION : ce cri est (c) Midway / Warner Bros.,
+# PAS sous licence MIT ; il est integre ici a la demande de l'auteur du projet, comme le portrait ci-dessus.
+# Retrait : vider la chaine (""" """) et mettre JB_TOASTY_SND_USED a 0 ; la cartouche est alors sans son (ou celui de l'utilisateur).
+JB_TOASTY_SND_USED = 11254
+JB_TOASTY_SND_B85 = """
+{Wp48S^xk9=GL@E0stWa8~^|S5YJf5;1>T9=3M{;XdE;FA)nQQMFz-8_U-VLsG2)KdrPp0yV`|#e3D^j5?g+gK`WMa23aDHU!?km
+2Odp$d0E_u1EUcJv!aM!y}N+_yd1!IIG$vYQ~%wX9!p5z|14?)IyO|=?Lx_$6d3Gtx}-S<Hzxq>D><CR>cxveT*ZKSHfuv=ulI&B
+RKM|16;@s0%w2Q)y$vWw{n%JjmuH!f<<F0#FM-#>$|O}pnN+RwtMwu`FaRYl@)n5EvOz&7@E4W)?VPNJ@$JaNSo<hBw1|8SV|7u(
+hk})k1^JqXP2nX=^DC~Zyx_;v<tu^&gsNz5PP&lO(@SuBz(g&-uX8G<i3mvpxI;pVy@mpTnQjq?lhel@Fr@lNR3|8#_A8}4FJq*;
+$HsTRMxR3`WRDGq{O+g6khQCLjf08GMuf1LF(;j-)?KPn9~gD#&1z|zO>(7G@54gIOc)qZXp3XvlJeWfnkKkeGWosyk8mMJty3cF
+XXcp3SX%GVynA6RADC)Q2Z0<HD7Vl+|NbEsg+fX>vNnLxlUZ6f)1n(0%wGQ#Y|QL0ilV>!XzLG3h~;N9XNEavFx^U%GJ&b<{WXsw
+AD9(th*+@=$q@c5lo?e2{ri_5r1z4qCK6$bM2M`(y#z{4c;^Jr|9rt(Dge*~{uVqKUjrVy-m0Zr2RSsZ0$^JE93EPEHWds36W@Nz
+(Kq$KF@eEMYMS+{x;k!dNGm(lr>WxLb`NHXnxdeDPx!Qcnyf)_Sia7S(ZASgFNBw4gIj7#^WtZVZs;uMo&Bbzdk)4-Z%*J4bOJ1;
+F|i{JHT-;lXTr9Z^2HEyTWA%3q4~?^J<B*}X6eG@z~ayey`#?Q;~%~QA*uf1dGS?;3@*TqN(0VHMukC(yP`BAw(oWhg?7JaT&WKl
+mTF@!G_;=;Y$p6=anbzujWy%MsIRF3L!7WTkM)y8L`IZOeu#X43JTxDIpmV+j=&Sx4vz;Mn{(fnI^=t~%bgSNNke<lboDK2XkIuA
+ob%)@r1q{4#sWTlMI8_brvI*M=R9Y}#9h!p9Oc{BTsQ6U+^PdWybiWX%0gxiut9=lnyFfQO&9qe9*#1e;3A?;pVbJEZ|~O?3u`ch
+eop~D#6MQ}nzb4C>TC?_Wm9gqMp*Y@SoLY}qfsP?8g`yB`qpf^r0eT(&g?Ahw{Rb}(`=ZiXkRf8d6D!6YbWJ`Z5K2^Ekl8mySm)7
+#>L4UAILAwEwV45wROmuJ(N;?`~j}xp1Y1&(6Y}_%Vsi@kf<z7p3piwwNYVaPY>CqbM+-nlM_{MyG%0I1g)R7jo|f~=oi3ti)>Sl
+r*Y*=B__V&k6r42$MFEYye%<9wz`F?za5nDl)Kv@ylx&BX}tURfO(vmC!7&3#BaE9^ON^3p`F(27edCwwwCo5TzI@B#tbV@M>XO+
+Wk(3nRny4yO|dH26ok-*i49dve(kMvZjS7eQd2)Po1&T!pxU#|m!~pPnS3cSz-xl12yq3_RBjS2GGV&kQEI~vT(3DJ3?6msiiJ6R
+ZwD)Yh&H6Vz4BP%Zoh->0+7P7`mAFf)2B56cI+z7&iAktXNtE*tQ%$=;~*sQab*)_g%#gl!ha;pip#}#Rm%@7*V@}d($SfPNl?1y
+ZKgWzsK-a7M|^bv+mR&LV*2)e;*_d3gG_EQ8}d>G8a;oG_%AiBYH9NL!yF?tdL76y@{dWsymZxQ7J+SP2-bLNC;$1nC<;h54NE<c
+$zs4zmp{h2Y{hWPfDq3Wj-Z47*koC;1{S4SgxuO7l&4FB@7);rUEo1N3o>-q>6d4_bvqU7shy%WM?pVNH-5?ZrSgsY#_dF{1b#JT
+t+VDFmSlK1-soYIopqK7XFnw|cCTaPg4~@yqFuYh`QFBivx)P$Q40BZ|0$`=Bcbzk$;P?N5Z!gBmF$mIt{{S8<*gYUR4S)5Prhfj
+BFAYsuIlC`QHu9-Qm`ym2!kN}_7g~CAQE7V{cT>YgJPhKm*PJa8B<Gd2R$f#*@waNrsT6hi4>b74;fPp9Vj(*1UEg3#sR+|v79z@
+Gv#f{+z_(+g|nl8F}`NMf#*P7yYvNC?cYDD$mm-BTAxlCzp)Kek#&5tF2}?>P<58g7Z!SJMuVe4b!wJsPigvsW*5G}$^tbhwjfm^
+(=(XO+ofLJt_7YKHTP@rLcn{i&e8C~_s1Bh+8s8k(`qZ%iMHe9?M1y^f+?aYAA)CpH0arlXILb$vft=KWOFOrHCh>KNo8L<<*HQU
+v%An7p@&Gbkf`Bi!b2FQ#m@QpS}S*S(k%6X-c(+#St~%eoXdVFqdj1EI4&GspY(U;2uGVsx()%bPk-K`YY?@)rV1SrxT^dGP@erD
+saEkRjxheyJXf!gJcMDOET#-Ab6!j2-JGoUfL7MD+vp3#<G=DEwzHT5sdZ3g+nLF%xH9G3GKL*KHeUz*-f3dEhK84I*3_3#fm~a@
+P4l$l0X9#>YOG>RS(jYoCh5g#(D9m3?B!t)7f(bz=*fG|N*s&hH}}w<<E*7FzeHkRgH}x3c1n1FRgZOz$LnZq9alq)D2$Q;sSlTh
+$S4;aZ*9rSx<iWhmM_rx1^AZ1@l}cxK(l;DcCHi1%->00#D5??g?;`m9>L0NlY6ffiekcWIAkzn3nKc_>~XL`x*0KNvG_n4IHL)c
+gGzZ<)Lh0}rME~a`WwMb($aP|JAY==C|Vuz6V@>Ev~=9mNt4ep#s8@eXe+J3$lFpH5WlxaSb2H^+I0gKpqa_aokakjR>%V7r@)(W
+Fr#{uT}=%Uw>+_`_>1(CTFa<+>xGoOiKY^W2@H(#P8%O4^zdx^j~d3f;^?+FpDeknOab2E1N^f<!iMMmLdfmG`e*4>mu?jX$g3e`
+WD-%GGJy6I1Z3s4JSZVm{-CIu%w(9ue3EfQP8z{uYAq{iAWpSka6wHu*zvaMeK`PT6#?rGB*Zg~j+AJL%!P0Q>ezp=;~Slvtr^x_
+6evbF-~zLs-b;~<EODWID^)D~%#$nZ#hbhA*cH{kc$7E9A#kJ_8JiXO^8azJ(s<A3K8{1&5+90rxj4?iROG{`=a=6RI1-yaM5_4*
+Nvd{(@D8=J5@eUZ`iA!38CduHut)KzY|l(!77XNxV}v{7$(}wjbHK98_aY}`!8T2oeVCXeFhGr1Y`Z0NlXnfNVTC6-);i;TWCNYK
+AE=%iYTXVzJ@gipX@$A0k<>Q#p$1GDw;;ZL;vfIV*_}<rn4&~H=*gSW)$NBpMP{K9fF&g#Q(ko&0P0eo1*~?q5rExDboeWYs9D?w
+{OkY<e%o5t+KELiG0n}S0_yVy-&8=UoL6`sCqNR-*VNG%U#?>55@-XoQ+{CXt(ClaI1eR7H|s5tRnlvP#kf5Fl-lWMoiW@pQ4qNa
+v!+3`{gFw>+CK6-YvQ(11j$`Mls&5?bP0#SbCSkIXARpmz_`ajh>L(X2zVc&XZYJZyWqb>-un&hcKd^dU2ttAX_=r!Q?2(LOe))Z
+PDfS1VlurZBpSEIE@Lky#GPR7Zr+=km_Bku)?@Agfljjd-Rh|_t~E`Nc!PCdrAV=jRjVstbgc5}4-6L`9RTGo+v5~^S$e@5>ERkc
+@}5<~-%7F!u0(0={{)Gz0$(N1JiiL*K}6dh2mL)G>@$`8p}#~jZ|HNb)_J}?Zh*DD6;N*^2dE=g4z*(l^16zZ8NNeRiav`>FJlru
+4Y<A;txe*zEsQ@1o64Hkgk6tPhnu#<Sl1nG9=YO|r>uQo%P)C0p6_egbzj`7X&+5hXOu4Tnc^U6XnNRpCq^p<4n5IMGcTY<8<?$o
+chBG%Av2h15b<r0t;vFs_=!}R9U;2FET}|(m&#P;2M5Sx!Q<?Y;Eu17iJ{llxXS&bUr=l|eJpx6WVh){{{sy426Xx1RjCRxv~rZe
+;)2<IXi)++u>wbd{9YTm`=`W!mcNmgR4=ERK)<(dhTPL#r`y-eex=all$%Km$%n))sN!^qa&A9|)j)Bx2V=x}n)7JS8**OM<pv9h
+B#^ln4Xe=kf!4Ctp;&aAMn6<@{HLrzvX8bb@(fI-Jp7#7K}&*49nlN`^oiIj+fk~vxC~NHH^h!}(pN;xb`&*$EE>tdh&Rbh-QJmI
+g<Zi{4C%u)chMl_9{tG35uv2c*xP<d;PK?IH8&9!@&&upO5~-a^EF$T3NGci0{bgL!4cXYcOB{;%KDTLF_%P4J7QdB31|A14u%}P
+mG=k|&5o>L!GpLJH)0IG?|KXJ0SaL$Tf*M?)9Fi5!N3Mvoo^D<fpCM5`FNpX(kK@Nby)hlD#}V1)^$d?51bXBFGNhc2lD)K>w2S*
+g7_xSLLiB@j9A@T$amy)0gp#*%l`s^T8@9*FTfh?#yvIJl=X}8R$zB8|Nm2Z`grz25tO{rkvxgbNPgD^2-Mr8I#qH1kV=yN>O;IH
+0KEJOu)X#f&;NdO8P!3uCALd{H73-pXI<2xpQGf+m_eM`M=0X@sc}|rn$=J{Erc*4_zP<hG%go}Nx}dxnCVPN{>Y~J2ulmAXLQ%g
+=8L{dlE7_bp2Z4aB!C-cjpKd0TJA}X$D(X*X$yM{d3;a$K$gYrn!ym1k4U20XMMQo`L_ZUpng+QPpG`JNCfYQp$Pmf&Kflktu<!~
+Yb!9FHFaC${|Prh${hkOB>Qm2Pmd$--(VcvW=0$wQY)O@HV4_cF$cn>jZI&nd3Jvtc%#w=D5?Y93W3sx7=j>?qa<V7=f)K^34;RW
+hjlFl4!98Sd$Zj59CgzzC#Gj|mMhenrWVl|+k(p7WDJF12jh0WhUO>rqLShv8jxI0LKy<#Oh<oKJEA{Vy6fv&tE;HOINcABa-UwU
+eoR&-U)jN-F%NH<Qk=aJEfKhLavtN`Iw-pI>DKIe?*OB2OB_R1zUsdyl890*X{-^>am<h9)gnAxfDO{Jvg^|SUsWvCT6)y0#}jWC
+DPj);4Cy*CTADp7$ayDJoF=^_)f%<yvC9drl*0Mbw&h@w{Opr`#ms@QY<R{mCzg4r!`t-~y0D%A%BQX|9Amle=;u!>+i(5#mn^x`
+7K9l5)pV)?N>5G_R*jOO<u40Om{|;7YC}1yI6T45e$bq;;(8V|#82LgBjbpCb_4Kb*yL?Tr1-q2en(|6$;eGy7@mRl?9!2%-zU|S
+f$D+JXI-XVcoF?H<d;K)<N70bui#(3uNVkpMz!(y<l1#onIlz9+mA^oAsB(z<hd*i%h8mmWHT11O~Ukwcx3*GgYSU%MKbP-s&K9@
+5M(+CasJ(6t(`(0o_6HnZyy5(YHms1g&*wxnFELfq2%x?B^=S68Wd@xV43wT{EO;q-o2x2T?T@x6uB5S2iw*U&keVA561^0dst#T
+>)qn8`mn~Gb9$2lyz!YKPCM#X6I>vu$5pTCTw#!Ya-$<E+GraB&Pi}!bi49@X*PI1`@iF6A{@Yva4etFs1ujzMfd`0Sq`woL;|zX
+aexr#qL59VJpeLvcJf#{p&N*a<g+cSY=`==RkbaMQz1L>d!q}i<QHPKo(+mKN>7R;IH2sM?YI7968&jNih=Zy!XlB1&AWH|vK53J
+vnR7%Riw2HmFBR9C|`K_pztLV%z62#ylhc-u-a`4X5FLW<+QpCF6V(v1B5`1#C<elRD9A`#yYODf4p5nqMQt!x67;<{yW}aA|9ie
+?qUVZqPq`sX(*9WUiyai+blreq8Xy{$d(YEx$iayOx-swM{oWIc}xiR7Lri+8&zY8P}U-Fl;LDxY?Q82n|pfZ;PyUG85nJ=K+~TX
+KJd4APcsB!h#FS<c8Yn<aEwxv8p0=HT!XNXaOiFvhJrdk0i*Rx@>oqAchMK<BiYg=zEjqOZ|^oy0fKm69JXCqm#Q}_;6IRW?o+Ts
+`b2fVKasN2bx|w9OAiIi#%z4`B1s`X)KzYp3SG>T)8(yReSmRetPrhk?oDXzop9&?@%J1phbT<BT<}aqG_4$Wq&A9`*VXi+f48y0
+Vz0S>vkJ&F!8_D=bT)6E&9Io*#t-Dj+1;kEjenCnEuS84d$45N3XrM1O^cxvDn|xOJz<DVkTa*|8cf>CZ4lHTDBq%iglh|uWuzGk
+!<p8TLgs_m;{#|C#{)a@6|Fe}?V;AwwMnpG!x+3s9-0PT&W{LDm)UA;y_ubh5wx``JgrlDf;az$ulFD_;zFEFSK2A{_=#6Gp_5lk
+4t5IvonI*3hGa~jU+AOAup%`{!*?B<8h(Q@;hT&vQ0?WqCeP4}<Eh(7v~2}6R~3BC0O2ov2JYSmFIy%`b=q_Q00000EI?ws7vBvK
+00Dv~fGz+4duAp9vBYQl0ssI200dcD
 """
 
 
@@ -4341,17 +4486,14 @@ def _jb_builtin_boxes():
 
 
 JB_TOASTY_TILE0 = 0x3F00        # Toasty : tuiles C-ROM (fin de la zone de 2 Mo ; les objets s'arretent avant 0x2500)
-JB_TOASTY_X = 200               # X ecran de la 1re colonne (112 px : bord droit en 312, coin bas droit)
+JB_TOASTY_RIGHT = 312           # X ecran du bord droit du bloc de colonnes (X de la 1re colonne = 312 - 16 x colonnes)
+JB_TOASTY_NCH = 3               # personnages au plus (= TO_NCH de core.S) : un est tire au sort a chaque economiseur
+JB_TOASTY_BLK = 40 + 24 * 8 + 4 * 32   # octets d'un bloc toastydata (= TOD_SIZE de core.S)
 JB_TOASTY_Y = 132               # Y du haut du bloc de 96 px au repos (bas en 228, sous le bas de l'ecran)
 JB_TOASTY_NMAX = 8              # = TO_NMAX de core.S
 
 
-def _jb_builtin_toasty():
-    """Image « Aurelien - Toasty » integree (JB_TOASTY_B85, tools/pack_toasty.py) -> dict : cols, rows, first (1re
-    rangee non vide par colonne), pals (listes de 16 mots), tiles[colonne] = [(palette, pixels 16 x 16), ...] de sa
-    1re rangee au bas."""
-    import lzma
-    d = lzma.decompress(base64.b85decode("".join(JB_TOASTY_B85.split())))
+def _jb_toasty_one(d):
     cols, rows, npal = d[0], d[1], d[2]
     first, o = list(d[3:3 + cols]), 3 + cols
     pals = []
@@ -4370,6 +4512,24 @@ def _jb_builtin_toasty():
     if o != len(d) or cols > JB_TOASTY_NMAX or npal > 4:
         raise ValueError("built-in Toasty picture: corrupted data")
     return {"cols": cols, "rows": rows, "first": first, "pals": pals, "tiles": tiles}
+
+
+def _jb_builtin_toasty():
+    """Images des personnages integrees (JB_TOASTY_B85, tools/pack_toasty.py) -> liste de dict (au plus JB_TOASTY_NCH) :
+    cols, rows, first (1re rangee non vide par colonne), pals (listes de 16 mots), tiles[colonne] = [(palette,
+    pixels 16 x 16), ...] de sa 1re rangee au bas."""
+    import lzma
+    d = lzma.decompress(base64.b85decode("".join(JB_TOASTY_B85.split())))
+    n, o, out = d[0], 1, []
+    for _ in range(n):
+        ln = struct.unpack_from(">H", d, o)[0]
+        out.append(_jb_toasty_one(d[o + 2:o + 2 + ln]))
+        o += 2 + ln
+    if o != len(d) or not 1 <= n <= JB_TOASTY_NCH:
+        raise ValueError("built-in Toasty pictures: corrupted data")
+    if sum(sum(len(c) for c in t["tiles"]) for t in out) > 0x4000 - JB_TOASTY_TILE0:
+        raise ValueError("built-in Toasty pictures: too many tiles")
+    return out
 
 
 JB_STEXT_MAX = 256              # texte qui ondule personnalise : caracteres au plus (+ 4 espaces de separation)
@@ -4447,12 +4607,24 @@ def adpcma_encode(x):
     return bytes((nib[i] << 4) | nib[i + 1] for i in range(0, len(nib), 2))
 
 
+def _jb_builtin_sound():
+    """Son « toasty » integre (JB_TOASTY_SND_B85) -> (ADPCM-A, echantillons utiles, texte) comme jb_toasty_sound, ou None
+    s'il a ete retire du programme."""
+    import lzma
+    b = "".join(JB_TOASTY_SND_B85.split())
+    if not b or not JB_TOASTY_SND_USED:
+        return None
+    adp = lzma.decompress(base64.b85decode(b))
+    return adp, JB_TOASTY_SND_USED, (f"built-in Toasty sound: {JB_TOASTY_SND_USED / JB_ADPCMA_RATE:.3f} s, "
+                                     f"{len(adp)} bytes of ADPCM-A")
+
+
 def jb_toasty_sound(path):
     """Fichier son fourni par l'utilisateur (WAV PCM 8/16/24/32 bits, tout debit, mono ou stereo ; autres formats avec
     le module soundfile) -> (ADPCM-A complete a un multiple de 256 octets + 256 octets de silence, echantillons utiles,
     texte).  Mono, decalage continu retire, silences de debut et de fin retires (enveloppe sur 2 ms, seuil 36 dB sous
     la crete, 4 ms gardes avant, 6 ms apres, fondus de 2 / 5 ms), crete a -1 dBFS sur 12 bits, 18 518,5 Hz.
-    Jamais integre a NGT Studio : le son reste celui de l'utilisateur, ecrit seulement dans sa cartouche."""
+    Sert a remplacer le son integre (_jb_builtin_sound) par un fichier de l'utilisateur, et a tools/pack_toasty_snd.py."""
     from fractions import Fraction
     name = os.path.basename(path)
     if not os.path.isfile(path):
@@ -4674,15 +4846,16 @@ def jb_sprite_region(fix, boxes=(), toasty=None):
                     if px[y][x]:
                         _spr_put(region, tile + rows * (x // 16) + y // 16, x % 16, y % 16, px[y][x])
             tile += cols * rows
-    if toasty:                                          # Toasty : colonne par colonne, de sa 1re rangee non vide au bas
-        tile = JB_TOASTY_TILE0
-        for col in toasty["tiles"]:
-            for _, px in col:
-                for y in range(16):
-                    for x in range(16):
-                        if px[y][x]:
-                            _spr_put(region, tile, x, y, px[y][x])
-                tile += 1
+    if toasty:                                          # Toasty : personnage par personnage, colonne par colonne, de sa
+        tile = JB_TOASTY_TILE0                          #   1re rangee non vide au bas
+        for ch in toasty:
+            for col in ch["tiles"]:
+                for _, px in col:
+                    for y in range(16):
+                        for x in range(16):
+                            if px[y][x]:
+                                _spr_put(region, tile, x, y, px[y][x])
+                    tile += 1
     return bytes(region)
 
 
@@ -4754,7 +4927,7 @@ def jb_occupancy(ev):
 
 
 def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, boxes=None, toasty=False,
-               toasty_sound=None, saver_text=None):
+               toasty_sound=None, saver_text=None, toasty_sfx=True):
     """Écrit la cartouche dans outdir, dans un ou plusieurs formats :
       mame     : set ngjb.zip (fichiers ROM a la racine du zip) + liste logicielle hash/neogeo.xml
                  (mame neogeo ngjb -hashpath hash -rompath .)
@@ -4764,7 +4937,8 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
     plus) ; None = planches integrees, chacune remplacee par jukebox_boxes(n).png s'il est a cote du programme ; "" = sans objets.
     toasty : True = « Aurelien - Toasty » dans l'economiseur, une fois par economiseur, au premier changement de piste
     (voir core.S) ; False = absent (bloc toastydata a zero, aucune tuile).
-    toasty_sound : fichier son fourni par l'utilisateur (jb_toasty_sound), joue avec le Toasty par-dessus la musique
+    toasty_sound : fichier son de l'utilisateur (jb_toasty_sound), joue avec le Toasty par-dessus la musique a la place du
+                   son integre ; toasty_sfx=False : aucun son
     (voie ADPCM-A la moins utilisee des albums, empruntee le temps du cri) ; None = Toasty muet.
     saver_text : texte qui ondule personnalise (jb_saver_text, 256 caracteres) ; None ou vide = textes d'origine.
     Refuse si l'évaluation dépasse la marge.  -> (texte du rapport, liste des fichiers écrits)."""
@@ -4830,10 +5004,11 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
     m1 = bytearray(_jb_bin(JB_M1_B64))
     sfx_note = ""
     vrom = pk["vrom"]
-    if toasty and toasty_sound:
+    snd = (jb_toasty_sound(toasty_sound) if toasty_sound else _jb_builtin_sound()) if toasty and toasty_sfx else None
+    if snd:
         if m1[JB_SFX_OFF:JB_SFX_OFF + 4] != b"SFX\0":
             raise ValueError("this Z80 driver has no Toasty sound block")
-        adp, used, sinfo = jb_toasty_sound(toasty_sound)
+        adp, used, sinfo = snd
         start = -(-len(vrom) // 256) * 256              # aligne sur 256 octets, sans franchir une limite de 1 Mo
         if start // MB != (start + len(adp) - 1) // MB:
             start = -(-start // MB) * MB
@@ -4848,17 +5023,18 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
                     f"{ticks * JB_TICK_SEC:.2f} s (triggered {keys[ch]} times by the albums; all voices: "
                     f"{', '.join(str(k) for k in keys)}).\n")
     to = _jb_builtin_toasty() if toasty else None
-    if to:                                               # toastydata (core.S) : actif, colonnes, X, Y de repos, (1re
-        o = JB_TOASTY_OFF                                #   rangee, taille) x 8, SCB1 (tuile, attribut) x 6 x 8, palettes
-        struct.pack_into(">4H", img, o, 1, to["cols"], JB_TOASTY_X, JB_TOASTY_Y)
-        t = JB_TOASTY_TILE0
-        for c in range(to["cols"]):
-            struct.pack_into(">2H", img, o + 8 + 4 * c, to["first"][c], to["rows"] - to["first"][c])
-            for k, (pal, _) in enumerate(to["tiles"][c]):
-                struct.pack_into(">2H", img, o + 40 + 24 * c + 4 * k, t, (33 + pal) << 8)
-                t += 1
-        for k, pal in enumerate(to["pals"]):
-            struct.pack_into(">16H", img, o + 40 + 24 * JB_TOASTY_NMAX + 32 * k, *pal)
+    if to:                                               # toastydata (core.S) : un bloc par personnage ; bloc : actif, colonnes,
+        t = JB_TOASTY_TILE0                              #   X, Y de repos, (1re rangee, taille) x 8, SCB1 (tuile, attribut)
+        for k, ch in enumerate(to):                      #   x 6 x 8, palettes
+            o = JB_TOASTY_OFF + k * JB_TOASTY_BLK
+            struct.pack_into(">4H", img, o, 1, ch["cols"], JB_TOASTY_RIGHT - 16 * ch["cols"], JB_TOASTY_Y)
+            for c in range(ch["cols"]):
+                struct.pack_into(">2H", img, o + 8 + 4 * c, ch["first"][c], ch["rows"] - ch["first"][c])
+                for j, (pal, _) in enumerate(ch["tiles"][c]):
+                    struct.pack_into(">2H", img, o + 40 + 24 * c + 4 * j, t, (33 + pal) << 8)
+                    t += 1
+            for j, pal in enumerate(ch["pals"]):
+                struct.pack_into(">16H", img, o + 40 + 24 * JB_TOASTY_NMAX + 32 * j, *pal)
     img = bytes(img)
     p1, p2 = prom_split(img)
     sw = lambda b: bytes(x for pr in zip(b[1::2], b[0::2]) for x in pr)     # format MAME load16_word_swap
@@ -4957,10 +5133,12 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
               "checked by the jukebox at boot (nothing shown if all are present, else a red line 'P2 nn = FIRST MISSING BANK').\n\n"
               + ("Screen saver: rotating objects from " + ", ".join(f"{os.path.basename(p)} ({len(b[0])} frames)" for p, b in zip(box_paths, box)) + ".\n\n" if box else
                  "Screen saver: no rotating objects (disabled).\n\n")
-              + ("Screen saver: \"Aurelien - Toasty\" ON: shows up once per screen saver, bottom right, in front of\n"
-                 "everything, when the next track starts (not in LOOP mode, where the track never changes).\n"
-                 "Picture: all rights reserved, Aurelien / Bouz.\n"
-                 + (sfx_note if sfx_note else "Toasty sound: none (no sound file given).\n")
+              + ("Screen saver: \"Toasty\" ON: one of " + str(len(to)) + " portraits (drawn at random, never the same twice in a row) shows up\n"
+                 "once per screen saver, bottom right, in front of everything, when the next track starts (not in LOOP\n"
+                 "mode, where the track never changes).\n"
+                 "Pictures: portraits of real people, all rights reserved (Aurelien / Bouz for the first one).\n"
+                 + (sfx_note if sfx_note else "Toasty sound: none" + (" (switched off)." if not toasty_sfx else " (no sound in this program, none given).") + "\n")
+                 + ("The built-in Toasty sound is the Mortal Kombat II shout, (c) Midway / Warner Bros.: do not distribute this cartridge.\n" if snd and not toasty_sound else "")
                  + "\n" if to else "")
               + (f"Screen saver text: \"{stext.decode().rstrip()}\" ({len(stext.rstrip())} characters).\n\n" if stext else "")
               +
@@ -7153,6 +7331,7 @@ class CartTab:
         self.v_fmt = {k: tk.BooleanVar(value=k in fm) for k in JB_FORMATS}
         self.v_toasty = tk.BooleanVar(value=bool(settings.get("cart_toasty", False)))
         self.v_tsound = tk.StringVar(value=settings.get("cart_toasty_sound", ""))
+        self.v_tsfx = tk.BooleanVar(value=bool(settings.get("cart_toasty_sfx", True)))
         self.v_stext = tk.StringVar(value=settings.get("cart_saver_text", ""))
         self.ev = None
         self.v_info = tk.StringVar(value="Add .ngt files and tick the tracks to keep.")
@@ -7234,10 +7413,12 @@ class CartTab:
                 self.v_scount.set(str(ex))
         self.v_stext.trace_add("write", stext_changed)
         stext_changed()
-        ttk.Checkbutton(sv, text='"Aurelien - Toasty" (once per screen saver, at the next track)', variable=self.v_toasty,
+        ttk.Checkbutton(sv, text='"Toasty" portraits (one at random, once per screen saver, at the next track)', variable=self.v_toasty,
                         command=lambda: self.settings.__setitem__("cart_toasty", bool(self.v_toasty.get()))
                         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
-        ttk.Label(sv, text="Toasty sound (your WAV)").grid(row=2, column=0, sticky="w")
+        ttk.Checkbutton(sv, text="Toasty sound, or replace it with your own file:", variable=self.v_tsfx,
+                        command=lambda: self.settings.__setitem__("cart_toasty_sfx", bool(self.v_tsfx.get()))
+                        ).grid(row=2, column=0, sticky="w")
         ttk.Entry(sv, textvariable=self.v_tsound).grid(row=2, column=1, sticky="we", padx=8, pady=2)
         sb = ttk.Frame(sv)
         sb.grid(row=2, column=2, sticky="w")
@@ -7248,7 +7429,7 @@ class CartTab:
             if f:
                 self.v_tsound.set(f)
         ttk.Button(sb, text="Browse…", command=pick_sound).pack(side="left")
-        ttk.Button(sb, text="None", command=lambda: self.v_tsound.set("")).pack(side="left", padx=4)
+        ttk.Button(sb, text="Built-in", command=lambda: self.v_tsound.set("")).pack(side="left", padx=4)
         self.v_tsound.trace_add("write", lambda *_: self.settings.__setitem__("cart_toasty_sound", self.v_tsound.get()))
         bot = ttk.Frame(parent, padding=(10, 4, 10, 10))
         bot.grid(row=8, column=0, sticky="we")
@@ -7486,11 +7667,12 @@ class CartTab:
                 messagebox.showinfo("No format", "Tick at least one output format (MAME, Darksoft, NeoSD).")
                 return
             snd = self.v_tsound.get().strip() or None
-            if snd and self.v_toasty.get() and not os.path.isfile(snd):
+            if snd and self.v_toasty.get() and self.v_tsfx.get() and not os.path.isfile(snd):
                 messagebox.showerror("Toasty sound", f"File not found:\n{snd}")
                 return
             report, files = build_cart(self.pack, self.v_prof.get(), bios, d, formats=fm, toasty=bool(self.v_toasty.get()),
-                                       toasty_sound=snd, saver_text=self.v_stext.get())
+                                       toasty_sound=snd, saver_text=self.v_stext.get(),
+                                       toasty_sfx=bool(self.v_tsfx.get()))
         except Exception as ex:
             messagebox.showerror("Failed", str(ex))
             return
@@ -7617,7 +7799,7 @@ def make_app(folder=None, player=None):
             pics=bool(pl.v_pics.get()), rip_wav=bool(ex.v_wav.get()), normalize=bool(ex.v_norm.get()),
             cart_profile=cart.v_prof.get(), cart_bios=cart.v_bios.get(),
             cart_formats=[k for k, v in cart.v_fmt.items() if v.get()], cart_toasty=bool(cart.v_toasty.get()),
-            cart_toasty_sound=cart.v_tsound.get(), cart_saver_text=cart.v_stext.get(),
+            cart_toasty_sound=cart.v_tsound.get(), cart_toasty_sfx=bool(cart.v_tsfx.get()), cart_saver_text=cart.v_stext.get(),
             cart_files=[m for g in cart.games for m in (_NGT_VIRT.get(g["path"]) or [g["path"]])],   # NGT1 : vrais fichiers
             tab=nb.index(nb.select()), fullscreen=win["full"], zoomed=is_zoomed(),
             geometry=win["geo"] or root.geometry(), version=VERSION)
@@ -7756,8 +7938,9 @@ def main():
     ap.add_argument("--upgrade", metavar="DIR", help="convert old NGT1 files (one per track) found in DIR into NGT2 files (one per game); originals are kept")
     ap.add_argument("--profile", default="standard", choices=sorted(JB_PROFILES), help="with --cart: standard (P1 1 MB + P2 4 MB) or extended (P2 8 MB)")
     ap.add_argument("--boxes", metavar="PNG[,PNG...]", help=f"with --cart --out: one to {JB_BOX_NP} picture sheets of objects rotating in the screen saver (frames on a magenta #FF00FF background, read row by row; the first sheet gives four objects out of five, the others share the fifth in turn); default: the built-in sheets, each one replaced by {JB_BOX_FILES[0]} ... {JB_BOX_FILES[-1]} of the same number if present next to the program; \"\" = none")
-    ap.add_argument("--toasty", action="store_true", help='with --cart --out: "Aurelien - Toasty" shows up in the screen saver (bottom right, in front of everything), once per screen saver, when the next track starts')
-    ap.add_argument("--toasty-sound", metavar="FILE", help="with --toasty: sound played with the Toasty, over the music (your own file, WAV; silences trimmed and level normalised automatically; never stored in NGT Studio)")
+    ap.add_argument("--toasty", action="store_true", help='with --cart --out: a "Toasty" portrait (one of the built-in ones, drawn at random) shows up in the screen saver (bottom right, in front of everything), once per screen saver, when the next track starts, with the built-in Toasty sound')
+    ap.add_argument("--toasty-sound", metavar="FILE", help="with --toasty: your own sound instead of the built-in one, played with the Toasty over the music (WAV; silences trimmed and level normalised automatically)")
+    ap.add_argument("--no-toasty-sound", action="store_true", help="with --toasty: no sound at all (the built-in Toasty shout is (c) Midway / Warner Bros.)")
     ap.add_argument("--saver-text", metavar="TEXT", help=f"with --cart --out: your own screen-saver wavy text ({JB_STEXT_MAX} characters at most; capitals, digits and punctuation, accents removed)")
     ap.add_argument("--formats", default="mame,darksoft,neosd", help="with --cart --out: output formats, comma-separated (mame, darksoft, neosd)")
     ap.add_argument("--bios", metavar="ZIP", help="with --cart --out: Neo Geo BIOS zip (neogeo.zip), source of the security block and of the font; if absent, looked for next to the program (exe or script) and in the folder of the last ROM opened in the Extract tab")
@@ -7876,10 +8059,12 @@ def main():
                 print(f"Rejected {f}: {why}")
             print(f"BIOS: {bios}")
             fm = tuple(x.strip() for x in a.formats.split(",") if x.strip() in JB_FORMATS) or JB_FORMATS
-            if a.toasty_sound and not a.toasty:
-                print("warning: --toasty-sound is ignored without --toasty", file=sys.stderr)
+            if (a.toasty_sound or a.no_toasty_sound) and not a.toasty:
+                print("warning: --toasty-sound / --no-toasty-sound are ignored without --toasty", file=sys.stderr)
+            if a.toasty_sound and a.no_toasty_sound:
+                print("warning: --toasty-sound is ignored with --no-toasty-sound", file=sys.stderr)
             report, files = build_cart(pk, a.profile, bios, a.out, formats=fm, boxes=a.boxes, toasty=a.toasty,
-                                       toasty_sound=a.toasty_sound, saver_text=a.saver_text)
+                                       toasty_sound=a.toasty_sound, saver_text=a.saver_text, toasty_sfx=not a.no_toasty_sound)
             if a.boxes is None:
                 print(jb_box_note())
             print(f"{len(files)} files written to {a.out} (see README_jukebox.txt)")

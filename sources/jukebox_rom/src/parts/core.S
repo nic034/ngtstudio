@@ -324,10 +324,13 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    TO_NPAL, 4
         .equ    TOD_SCB1,40             | toastydata : SCB1 des colonnes (TO_NMAX x 6 x 2 mots)
         .equ    TOD_PAL, 40+TO_NMAX*24  | toastydata : palettes
-        .equ    TOD_SIZE,TOD_PAL+TO_NPAL*32
+        .equ    TOD_SIZE,TOD_PAL+TO_NPAL*32     | un bloc par personnage (2.5.28)
+        .equ    TO_NCH,  3              | personnages au plus : un tire au sort a chaque economiseur (toasty_pick)
         .equ    V_TOST,  RAM+1720       | Toasty : 0 arme (economiseur affiche), 1 declenche, 2 anime, 3 passe / desactive
         .equ    V_TOSF,  RAM+1722       | Toasty : image de l'animation (index dans to_dy)
         .equ    V_TOSND, RAM+1724       | Toasty : 1 = cri a envoyer au Z80 (FF 07) par la boucle principale
+        .equ    V_TOSP,  RAM+1726       | Toasty : (long) bloc toastydata du personnage de l'economiseur en cours
+        .equ    V_TOSC,  RAM+1730       | Toasty : index du dernier personnage tire (pas deux fois de suite le meme)
         .equ    V_IPOS,  RAM+260        | position du petit texte (pixels)
         .equ    V_ILEN,  RAM+262        | longueur du petit texte (caracteres)
         .equ    V_INEW,  RAM+264        | 1 = reconstruire le petit texte en fin d'image
@@ -509,6 +512,7 @@ saver_on:
         clr.l   V_PALFN                | (aucune pose en cours pendant le calcul)
         moveq   #1,d7                  | palettes a 50 %, calculees ici (trop long pour le VBlank : 50 lignes mesurees)
         bsr     pal_prep
+        bsr     toasty_pick            | Toasty : personnage de cet economiseur (avant les palettes : pal_saver pose les siennes)
         move.l  #pal_saver,V_PALFN     | palettes de l'economiseur : posees par le VBlank (jamais pendant l'affichage : une
         bsr     wait_frame             |   ecriture de palette pendant l'affichage laisse des points / traits parasites sur
         bsr     wait_frame             |   une vraie console, MAME ne le montre pas) ; 2 images : au moins un VBlank entier
@@ -542,7 +546,8 @@ pal_saver:
         move.w  #0x147F,0x4003C2
         move.w  #0x594F,0x4003E2
         move.w  #0x5F4C,0x400402
-        lea     toastydata+TOD_PAL,a0  | Toasty : palettes 33..36 (ecrites par le constructeur ; zeros sans l'option,
+        movea.l V_TOSP,a0              | Toasty : palettes 33..36 du personnage tire (ecrites par le constructeur ; zeros
+        lea     TOD_PAL(a0),a0         |   sans l'option,
         lea     0x400000+TO_PAL0*32,a1 |   palettes alors jamais utilisees)
         moveq   #TO_NPAL*16-1,d0
 39:     move.w  (a0)+,(a1)+
@@ -584,6 +589,8 @@ spr_hide:
 toasty_init:                           | requete 2 (demarrage) : rien d'arme avant le premier economiseur
         clr.w   V_TOSF
         clr.w   V_TOSND
+        clr.w   V_TOSC
+        move.l  #toastydata,V_TOSP
         move.w  #3,V_TOST
         rts
 
@@ -607,13 +614,43 @@ toasty_snd:                            | boucle principale, apres feed : cri dem
         movem.l (sp)+,d0-d6
 1:      rts
 
+toasty_pick:                           | saver_on : tire le personnage au hasard (compteur d'images = instant du dernier appui
+        lea     toastydata,a0          |   sur une touche + delai) parmi ceux construits (blocs contigus, 1er mot = actif),
+        moveq   #0,d1                  |   jamais deux fois de suite le meme ; V_TOSP = son bloc
+        moveq   #TO_NCH-1,d0
+1:      tst.w   (a0)
+        beq.s   2f
+        addq.w  #1,d1                  | d1 = personnages construits
+2:      lea     TOD_SIZE(a0),a0
+        dbra    d0,1b
+        moveq   #0,d0
+        subq.w  #2,d1
+        bcs.s   5f                     | 0 ou 1 personnage : le premier
+        addq.w  #2,d1
+        move.w  V_TICKS,d0
+        divu    d1,d0
+        swap    d0                     | d0.w = reste
+        cmp.w   V_TOSC,d0
+        bne.s   5f
+        addq.w  #1,d0                  | meme que la fois precedente : le suivant
+        cmp.w   d1,d0
+        bcs.s   5f
+        moveq   #0,d0
+5:      move.w  d0,V_TOSC
+        mulu    #TOD_SIZE,d0
+        lea     toastydata,a0
+        adda.l  d0,a0
+        move.l  a0,V_TOSP
+        rts
+
 toasty_setup:                          | saver_on (a6 = LSPC), avant que l'economiseur soit visible : arme (option
         move.w  #3,V_TOST              |   construite) ou rien ; une animation interrompue au dernier reveil est finie
-        tst.w   toastydata
+        movea.l V_TOSP,a0
+        tst.w   (a0)
         beq.s   1f
         clr.w   V_TOST
 1:      bsr     toasty_hide
-        lea     toastydata,a0
+        movea.l V_TOSP,a0
         tst.w   (a0)
         beq.s   9f
         move.w  2(a0),d1               | colonnes
@@ -656,7 +693,7 @@ toasty_vbl:                            | VBlank, economiseur affiche, avant save
         move.w  #2,V_TOST              | depart (declenche par le changement de piste) : X des colonnes, une fois
         clr.w   V_TOSF
         move.w  #1,V_TOSND             | et le cri (boucle principale)
-        lea     toastydata,a0
+        movea.l V_TOSP,a0
         move.w  2(a0),d1
         subq.w  #1,d1
         move.w  4(a0),d2
@@ -673,7 +710,7 @@ toasty_vbl:                            | VBlank, economiseur affiche, avant save
         cmp.b   #255,d3
         beq.s   8f
         addq.w  #1,V_TOSF
-        lea     toastydata,a0
+        movea.l V_TOSP,a0
         add.w   6(a0),d3               | haut du bloc = repos + decalage (biais de 8)
         subq.w  #8,d3
         move.w  #496,d4
@@ -1857,7 +1894,7 @@ boxdata:  .word   0
 | Toasty (rempli par le constructeur, JB_TOASTY_OFF ; tout a zero sans l'option) : actif, colonnes, X de la 1re
 | colonne, Y du haut du bloc au repos, puis TO_NMAX x (1re rangee non vide, taille en tuiles), TO_NMAX x 6 x (tuile,
 | attribut) = SCB1 de chaque colonne a partir de sa 1re rangee, TO_NPAL palettes de 16 couleurs
-toastydata: .fill TOD_SIZE, 1, 0
+toastydata: .fill TOD_SIZE*TO_NCH, 1, 0
 | Toasty : decalage vertical (+8) image par image a partir du repos ; 255 = fin.  Montee 30 images avec 2 px de
 | depassement, tenue 96 images (gorgee de 2 px), descente 24 images ; ~2,5 s (tools : genere, voir NOTES_JUKEBOX.md)
 to_dy:

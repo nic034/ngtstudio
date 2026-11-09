@@ -1,3 +1,21 @@
+2.5.28 2026-11-09  Jukebox ROM:
+                   NEW  Toasty: THREE portraits instead of one.  Each screen saver draws one at random (never the
+                        same one twice in a row) among the built-in portraits: Aurelien with his mug and two more
+                        (68000: toasty_pick, one toastydata block per character, V_TOSP / V_TOSC).  Same animation,
+                        same place (bottom right, in front), same rule: once per screen saver, at the next track.
+                        Pictures: tools/pack_toasty.py (several PNGs, fitted to 112 x 96 px, noise specks removed),
+                        art/toasty_frame.png, toasty_frame_2.png, toasty_frame_3.png; 89 C-ROM tiles in all
+                   NEW  the Toasty sound is now BUILT IN (JB_TOASTY_SND_B85, tools/pack_toasty_snd.py: the clean file
+                        supplied by Nicolas, 0.61 s, ADPCM-A, 5.9 KB, lzma + base85) and played by default with the
+                        Toasty.  It is the Mortal Kombat II "Toasty!" shout, (c) Midway / Warner Bros., NOT covered
+                        by the MIT License: embedded at the project author's decision (NOTICE.md, LICENSE).  Cartridge
+                        tab: "Toasty sound" check box (untick = no sound) and optional file replacing it;
+                        CLI: --no-toasty-sound, --toasty-sound FILE.  To remove it from the program: empty
+                        JB_TOASTY_SND_B85 and set JB_TOASTY_SND_USED = 0
+                   Tests: mame_tests/toasty_chars.lua (12 screen savers in a row: 3 characters drawn, never twice in
+                        a row, 12 shouts for 12 apparitions); toasty_wake.lua (woken up: no portrait nor shout when the
+                        track then changes, re-armed by the next screen saver); toasty_sfx.lua (built-in sound,
+                        music voices untouched)
 2.5.27 2026-11-09  Jukebox ROM:
                    CHANGED "Aurelien - Toasty": once per screen saver, at the first track change after the screen
                         saver starts (was: once per power-on, at the 3rd album or after 20 minutes, then a 10 s
@@ -39,19 +57,47 @@
                         option the ROM differs only by a 360-byte block of zeros and no tiles
                    Tools: jukebox_rom/tools/pack_toasty.py (picture -> JB_TOASTY_B85), tools/embed.py (assembles
                         and writes the binaries and offsets into ngt_studio.py, checked by reading them back)
+2.5.25 2026-10-31  Jukebox ROM source (core.S):
+                   FIXED the bouncing point sphere (new in 2.5.24): at the bottom of its bounce the lowest
+                        projected point could reach up to 75 px below its centre (measured over all 96 points and
+                        every possible rotation); the floor was set at 184, so the ball actually overlapped and
+                        partly went under the small scrolling text at the bottom of the screen (SM_YB = 211) on
+                        every bounce.  The floor is now 134: the lowest point reaches 209, 2 px clear of the text,
+                        never under it, and the bounce uses more of the screen height (looks more centred).  Only
+                        the floor changed; bounce height/speed are the same, so on the tallest bounces the sphere
+                        now also grazes a little more off the top edge than before (clipped, not a bug, same kind
+                        of hardware clipping that already happened at the bottom before this fix).
+
+2.5.24 2026-10-30  Jukebox ROM source (core.S):
+                   Screen saver, point sphere: it now BOUNCES like a ball across the bottom of the screen,
+                        left to right, at varying heights, while still spinning on itself exactly as before
+                        (sphere_step untouched). New sphere_bounce routine (called once per frame by
+                        sphere_draw, right after sphere_step): gravity-based fixed-point simulation (<<6),
+                        slow lateral drift bouncing off the screen edges instead of exiting them (always
+                        visible for the whole scene), slow gravity for a deliberate, non-twitchy fall, a new
+                        random upward speed drawn on every ground contact (capped so the ball never exits
+                        the top of the screen by much). No new sprite, no new table: only the sphere's
+                        projection centre moves, same 96 points, same rendering. Also SPED UP the handful of
+                        per-frame multiplications by a fixed constant (screen-saver scrolling-text wrap, CD
+                        icon fade, vumeter colour thresholds): replaced with shifts and additions, exact for
+                        every value these ever take; everything else deliberately left alone (constant
+                        divisions with a hand-tuned feel, or by a runtime value: no safe, exact replacement).
+                        No behaviour change on the untouched routines (confirmed byte-identical where
+                        unaffected); full MAME check frame by frame (screen saver text/wave/CD icon,
+                        vumeters, and a full natural run of the text<->sphere transition with the new bounce).
+                        Sprite budget unchanged: 325/381 used, margin 56.
+
 2.5.23 2026-10-28  Jukebox ROM source (core.S/ui3.S/draw3.S):
                    CLEANED a handful of leftovers found unused by a full cross-reference of every symbol: 6 unused
                         .equ constants, a vumeter colour table superseded by the existing per-palette table, and an
                         unused " BANK(S) OK" string.  No behaviour change (confirmed in MAME: boot, screen saver,
                         checkerboard, floating objects, spinning CD all unaffected); 22 bytes smaller
-
 2.5.22 2026-10-28  Jukebox screen saver:
                    NEW  spinning CD icon, fixed in the top-right corner: 16-frame rotation (built in as a 5th
                         sheet, your own artwork), continuous fade in and out.  Drawn above the checkerboard and
                         the floating objects but below the scrolling text, so it is never covered and never
                         covers the text.  The floating-object system cannot pick this sheet at random: it stays
                         fixed in its corner.
-
 2.5.21 2026-10-26  Jukebox screen saver:
                    REMOVED the two chip objects (64-pin and 28-pin): they did not look good.  Four built-in sheets
                         remain: game box, Neo Geo console, Delta Island logo and triangle (four boxes for one object

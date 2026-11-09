@@ -33,10 +33,12 @@ ngt_studio.py and the jukebox tiles). The game box and the Neo Geo console show
 SNK artwork and trademarks, (c) SNK. The Delta Island logo and triangle and the
 spinning CD icon are artwork by the author (Nic034 / Delta Island), all rights
 reserved. None of them is licensed under the MIT License.
-It does NOT cover the "Aurelien - Toasty" picture (JB_TOASTY_B85 in ngt_studio.py,
-jukebox_rom/art/toasty_frame.png): a portrait of a real person,
-(c) Aurelien / Bouz, all rights reserved; the mug shows a Pac-Man design
-(Bandai Namco).  No Toasty sound is included: the sound is a file chosen by
-the user at build time and only written into the user's own cartridge.
+It does NOT cover the three "Toasty" pictures (JB_TOASTY_B85 in ngt_studio.py,
+jukebox_rom/art/toasty_frame*.png): portraits of real people, all rights
+reserved by their authors (Aurelien / Bouz for the first one, whose mug shows a
+Pac-Man design, Bandai Namco).  It does NOT cover the Toasty sound
+(JB_TOASTY_SND_B85): the "Toasty!" shout of Mortal Kombat II, (c) Midway /
+Warner Bros., embedded at the project author's decision and removable
+(see NOTICE.md).
 See NOTICE.md and LEGAL_NOTICE.md at the root of the repository for the
 details (what is covered, trademarks, network access, privacy).

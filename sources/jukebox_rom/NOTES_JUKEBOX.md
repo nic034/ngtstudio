@@ -317,7 +317,7 @@ ci-dessous (amplitude minimale, espacement des objets).
   la couche fix est transparente pendant l'économiseur. SCB1/SCB2 posés par `toasty_setup` dans `saver_on` (hors
   VBlank), colonnes masquées ; X posé une fois au départ ; ensuite seulement 7 SCB3 par image.
 - **Mouvement** : table `to_dy` (dy + 8 par image, 255 = fin), repos `JB_TOASTY_Y` = 132 (haut du bloc ; bas en 228),
-  X `JB_TOASTY_X` = 200 (bord droit en 312) : montée 30 images (ease-out, 2 px de dépassement), tenue 96 images
+  X = `JB_TOASTY_RIGHT` (312) − 16 × colonnes (200 pour le 1er personnage ; bord droit en 312) : montée 30 images (ease-out, 2 px de dépassement), tenue 96 images
   (gorgée de 2 px), descente 24 images ; 150 images, ~2,5 s.
 - **96 sprites par ligne** : mesuré sur la 2.5.25 (6 min, sans Toasty) : 89 au pire en lignes 120-127, 82 en
   128-135, ≤ 77 plus bas. Le haut du bloc ne monte jamais au-dessus de la ligne 130 (repos 132 − 2) et les colonnes
@@ -419,3 +419,26 @@ ci-dessous (amplitude minimale, espacement des objets).
 - Test sur Darksoft Multi-AES (chez Nicolas), puis NeoSD et console réelle.
 - Confirmer sur Darksoft : le sine scroll et les objets (format `crom0`), `fpga` avec une P2 de 8 Mo.
 - Sur une vraie console : coût de l'interruption (35 lignes sur 40 dans MAME) et 96 sprites par ligne (95 au pire).
+
+## Toasty : 3 personnages et son intégré (2.5.28)
+
+- **Personnages** : `art/toasty_frame.png` (Aurelien, 7 colonnes), `toasty_frame_2.png` (5 colonnes), `toasty_frame_3.png`
+  (6 colonnes), chacun une case « tenue » (rangée 3, colonne 2) de sa planche de 16 cases. `tools/pack_toasty.py` les
+  ajuste à 112 x 96 px au plus (large : 112 px de large ; haut : 96 px de haut), collés en bas à droite de leur bloc de
+  colonnes de 16 px ; 4 palettes de 15 couleurs chacun, toujours les palettes 33..36 (celles du personnage tiré sont
+  posées par `pal_saver`). Le plus gros objet est gardé, les taches de bruit du fond sont retirées (le 1er personnage
+  sort octet pour octet comme en 2.5.27). 30 + 27 + 32 = 89 tuiles C-ROM à partir de 0x3F00 (256 disponibles).
+- **68000** : `toastydata` = `TO_NCH` (3) blocs de `TOD_SIZE` (360) octets, premier mot = actif ; `toasty_pick` (appelée par
+  `saver_on` avant `pal_saver`) compte les blocs construits, tire `V_TICKS` modulo ce nombre (le compteur d'images à
+  l'instant où l'économiseur démarre, donc dépendant du dernier appui), passe au suivant si c'est le même que
+  `V_TOSC` (dernier tiré) ; `V_TOSP` (long) = bloc choisi, lu par `toasty_setup`, `toasty_vbl` et `pal_saver`.
+  X propre à chaque bloc ; Y de repos et animation communs (`to_dy`). Jamais plus de 7 sprites : budget par ligne inchangé.
+- **Son intégré** : `JB_TOASTY_SND_B85` (ADPCM-A de 5 888 octets issu du fichier propre fourni par Nicolas, lzma + base85 :
+  6 191 caractères) + `JB_TOASTY_SND_USED` ; `tools/pack_toasty_snd.py fichier.mp3|wav` le régénère. Cri (c) Midway /
+  Warner Bros. : voir `NOTICE.md`. `build_cart(toasty_sfx=False)` / `--no-toasty-sound` : sans son ; `toasty_sound=` : le
+  fichier de l'utilisateur remplace le son intégré.
+- **Mesuré (MAME 0.264, vrai BIOS euro)** : `mame_tests/toasty_chars.lua`, 12 économiseurs de suite : les 3 personnages
+  tirés (1,2,1,0,2,0,2,1,2,1,0,2), jamais deux fois de suite le même, 12 cris pour 12 apparitions, 0 anomalie ;
+  captures de chacun en bas à droite, devant tout. `toasty_sfx.lua` : cri par défaut, voie 6, 0 déclenchement de la
+  musique pendant le cri. Non rejoué : le test de 6 min du nombre de sprites par ligne (`toasty_stress.lua`, mesuré
+  en 2.5.27 avec 7 colonnes : les nouveaux personnages en ont 5 et 6) ; pas d'essai sur matériel réel (Darksoft).

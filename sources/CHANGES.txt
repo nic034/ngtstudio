@@ -1,6 +1,15 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.28 (2026-11-09)
+- Jukebox ROM: three "Toasty" portraits instead of one. Each screen saver picks one at random (never the same one
+  twice in a row); same animation, same place, still once per screen saver at the next track.
+- The Toasty sound is now built in and played by default (Mortal Kombat II shout, 0.6 s, played over the music
+  without stopping it). It is (c) Midway / Warner Bros., NOT under the MIT License: embedded at the project author's
+  decision, see NOTICE.md. Untick "Toasty sound" in the Cartridge tab (or --no-toasty-sound) to leave it out, or pick
+  your own file to replace it (--toasty-sound).
+- Portraits: all rights reserved by their authors (Aurelien / Bouz for the first one).
+
 2.5.27 (2026-11-09)
 - Jukebox ROM: "Aurelien - Toasty" now shows up once per screen saver, at the first track change after the screen
   saver starts (no more 3rd album / 20 minutes rule).
