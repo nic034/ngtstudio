@@ -54,6 +54,7 @@
         .equ    WIN,     0x100800       | fenetre LZSS 32 Ko (s'arrete avant la backup RAM en 0x108800)
         .equ    P1CUR,   0x10FD96
         .equ    P1CHG,   0x10FD97
+        .equ    STCURNT, 0x10FDAC       | START/SELECT maintenus (bit 0 START J1, bit 1 SELECT J1)
         .equ    STCHG,   0x10FDAD       | START/SELECT nouvellement presses (bit 0 START J1, bit 1 SELECT J1)
         .equ    FEED,    160            | octets relayes au Z80 par image au plus (= JB_FEED de ngt_studio.py)
         .equ    FEEDMIN, 24             | ... dont au moins FEEDMIN, meme en fin de trame

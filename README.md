@@ -67,6 +67,7 @@ carry your favourite music on a real Neo Geo.
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
 - **2.5.29**: the Toasty check box is now called "Toasty Delta Island".
+- **2.5.36**: DOWN + START while the Toasty portrait is on screen plays one of 4 Mortal Kombat 3 sounds at random, then the screen saver stops (sounds © Midway / Warner Bros., not MIT: see `NOTICE.md`).
 - **2.5.35**: the 4 Toasty characters now have the same height on screen (94 px).
 - **2.5.34**: a 4th Toasty character (4 portraits drawn at random).
 - **2.5.33**: the 3 Toasty characters now have the same size on screen (same head width).

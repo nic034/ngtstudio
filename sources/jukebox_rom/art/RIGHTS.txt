@@ -21,3 +21,6 @@ author (to be confirmed by the project author).
 
 Toasty sound (JB_TOASTY_SND_B85 in ngt_studio.py, not a file of this folder): the "Toasty!" shout of
 Mortal Kombat II, (c) Midway Games / Warner Bros.  NOT licensed under the MIT License (see ../../../NOTICE.md).
+
+Combo sounds (JB_COMBO_SND_B85 in ngt_studio.py, not files of this folder): Mortal Kombat 3 sounds mk3-09440, mk3-09160,
+mk3-09150, mk3-09155, (c) Midway Games / Warner Bros.  NOT licensed under the MIT License (see ../../../NOTICE.md).

@@ -507,3 +507,24 @@ ci-dessous (amplitude minimale, espacement des objets).
   30 + 27 + 32 + 29 = 118 tuiles (sur 256 à partir de 0x3F00). Colonnes : 7 / 5 / 6 / 5 (max 7, inchangé).
 - Vérifié dans MAME : `toasty_chars.lua` (8 économiseurs, 4 personnages, 8 cris, 0 anomalie), hauts des 4 personnages alignés sur la capture ;
   `toasty_stress.lua` rejoué (voir CHANGES).
+
+## Combo Bas + Start pendant le Toasty (2.5.36)
+
+- **Règle** : Bas + Start du joueur 1, pendant que le portrait est affiché (`V_SAVER` et `V_TOST` = 2) : un des 4 sons MK3 (tirage
+  `V_TICKS` mod 4 à l'instant de l'appui), puis l'économiseur s'arrête (même sortie que pour un bouton : `sv_wake` / `saver_off`),
+  retour à l'écran de lecture, musique en cours. Aucun son dans les autres cas (économiseur sans Toasty, Toasty fini, écran de lecture,
+  autre bouton, Bas ou Start seul).
+- **68000** (`core.S`, `toasty_keys`, appelé par `saver_in`) : Bas et Start nouvellement pressés sont consommés (ils ne réveillent pas) ;
+  `V_TOSW` (RAM+1732) = 20 images laissées pour l'autre touche ; si les deux sont maintenus (`P1CUR` bit 1, `STCURNT` 0x10FDAC bit 0) :
+  `V_TOSND` = 2 + (V_TICKS & 3), puis réveil ; délai écoulé ou autre bouton (A, B, C, D, gauche, droite, haut, SELECT) : réveil ordinaire.
+  `toasty_snd` envoie FF (V_TOSND + 6) : 7 = cri, 8..11 = sons MK3 1..4. Contrepartie : pendant les ~2,3 s du portrait, Bas ou Start
+  seul ne réveille qu'après 1/3 s.
+- **Z80** (`m1drv.asm`) : FF 08..0B → `sfxsel` 1..4 + `sfxreq` ; `sx_ent` choisit l'entrée (sfxs + 6 x sfxsel) ; bloc `sfxx` (4 x début,
+  fin, durée) juste après `sfxdur` (ngt_studio.py : `JB_SFX_OFF + 11 + 6k`) ; même voie ADPCM-A empruntée que le cri. Bug trouvé par le
+  test audio : `sx_ent` écrasait DE (D = bit de la voie) -> aucun key-on, son muet alors que `sfxon` montait ; corrigé (push/pop DE).
+- **Sons** : `tools/pack_combo_snd.py a.mp3 b.mp3 c.mp3 d.mp3` -> `JB_COMBO_SND_B85` / `JB_COMBO_SND_USED` (via `jb_toasty_sound` : -36 dB, crête
+  -1 dBFS) ; 2,03 / 2,70 / 2,75 / 2,29 s (19 200 / 25 344 / 25 856 / 21 504 octets), ~95 Ko de texte dans ngt_studio.py.
+- **Mesuré dans MAME** (vrai BIOS euro) : `toasty_combo.lua` 22 cas, 0 anomalie (ensemble, Bas puis Start à 8 images, Start puis Bas à
+  10, Bas seul, Start seul, Bas relâché avant Start, A, sans Toasty, Toasty fini, écran de lecture, 12 tirages : 1x5, 2x5, 3x2, 4x3) ;
+  `toasty_combo_audio.lua` (`-wavwrite`, musique arrêtée, avec - sans appui) : les 4 sons joués en entier, corrélation 0,996..0,999
+  avec leur décodage ADPCM-A, rien après la fin. Non testé : matériel réel, joueur 2 (non géré), vrai hasard sur console.

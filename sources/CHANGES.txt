@@ -1,6 +1,14 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.36 (2026-11-09)
+- Toasty Delta Island: press DOWN + START (player 1) while the Toasty portrait is on screen and one of 4 Mortal Kombat 3
+  sounds (your 4 files) is played at random; then the screen saver stops and the normal player screen comes back, the music
+  goes on. Not played in any other situation. DOWN or START alone, while the portrait is shown, is held for 1/3 s to leave
+  time for the other button, then wakes the screen saver as usual (other buttons wake it at once).
+- The sounds are (c) Midway / Warner Bros., not under the MIT License (see NOTICE.md); they are in the ROM only with the
+  "Toasty Delta Island" option. ngt_studio.py grows by about 95 KB of text.
+
 2.5.35 (2026-11-09)
 - Toasty Delta Island: the 4 characters now all have the same HEIGHT on screen (94 px), as asked. This replaces the equal
   head width of 2.5.33/34: the portraits are not cropped the same way, so the bald man and the man with the cap now have

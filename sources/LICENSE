@@ -39,7 +39,7 @@ It does NOT cover the four "Toasty" pictures (JB_TOASTY_B85 in ngt_studio.py,
 jukebox_rom/art/toasty_frame*.png): portraits of real people, all rights
 reserved by their authors (Aurelien / Bouz for the first one, whose mug shows a
 Pac-Man design, Bandai Namco).  It does NOT cover the Toasty sound
-(JB_TOASTY_SND_B85): the "Toasty!" shout of Mortal Kombat II, (c) Midway /
+(JB_TOASTY_SND_B85) nor the four combo sounds (JB_COMBO_SND_B85, Mortal Kombat 3): the "Toasty!" shout of Mortal Kombat II, (c) Midway /
 Warner Bros., embedded at the project author's decision and removable
 (see NOTICE.md).
 See NOTICE.md and LEGAL_NOTICE.md at the root of the repository for the

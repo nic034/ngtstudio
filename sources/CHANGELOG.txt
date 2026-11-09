@@ -1,3 +1,19 @@
+2.5.36 2026-11-09  Jukebox screen saver (Toasty Delta Island):
+                   NEW  DOWN + START (player 1) pressed together WHILE the Toasty portrait is on screen: one of 4
+                        Mortal Kombat 3 sounds (files mk3-09440, 09160, 09150, 09155 supplied by Nicolas, 2.0 to 2.7 s)
+                        is played at random, then the screen saver stops and the player screen comes back, the music
+                        goes on.  Never played in any other situation (no Toasty on screen, other buttons, normal screen).
+                        While the portrait is shown, DOWN or START alone is held for 20 images (0.33 s) to leave time
+                        for the other button, then wakes the screen saver as any button does (any other button wakes
+                        it at once).  Built only with the "Toasty Delta Island" option, like the shout.
+                        Sounds: JB_COMBO_SND_B85 / JB_COMBO_SND_USED (tools/pack_combo_snd.py, ADPCM-A, 95 KB of text in
+                        this file), played on the same borrowed ADPCM-A voice as the shout.  Z80 driver: commands
+                        FF 08..0B, block sfxx (4 x start / end / duration) after sfxdur; 68000: toasty_keys
+                        (core.S), V_TOSW, V_TOSND 2..5.  (c) Midway / Warner Bros., not MIT (NOTICE.md)
+                   Tests: mame_tests/toasty_combo.lua (22 cases: together, staggered, one button, other button, no
+                        Toasty, Toasty over, normal screen, 12 draws: 0 anomalies); toasty_combo_audio.lua (the 4
+                        sounds recorded and compared with their ADPCM-A decoding: correlation 0.996 to 0.999 over the
+                        whole length, nothing after the end)
 2.5.35 2026-11-09  Jukebox screen saver (Toasty Delta Island):
                    CHANGED the 4 Toasty characters now all have the same HEIGHT on screen: 94 px (the tallest that
                         fits for all: the mug portrait is limited by the 112 px width).  Replaces the equal head width of

@@ -34,6 +34,11 @@ The [MIT License](LICENSE) (© 2026 Nicolas (Nic034)) covers **the code written 
      nothing is played). There is a single build option, "Toasty Delta Island" (`--toasty`): ticked, the cartridge gets the
      three portraits **and** the sound; unticked, it gets neither. A cartridge built with it contains that sound: like every built ROM, **do not distribute it**. If you redistribute NGT Studio, you
      redistribute the sound too: remove it first if you have no right to share it.
+   - the **four combo sounds** (`JB_COMBO_SND_B85`, since 2.5.36; played when DOWN + START are pressed while the Toasty
+     portrait is on screen) are **Mortal Kombat 3 sounds (files mk3-09440, mk3-09160, mk3-09150, mk3-09155), © Midway Games /
+     Warner Bros.**, with the same status as the Toasty sound above: not MIT, embedded at the project author's decision and
+     risk, in the ROM only with the "Toasty Delta Island" option; remove them by emptying `JB_COMBO_SND_B85` and setting
+     `JB_COMBO_SND_USED = []`. Do not distribute a cartridge built with them.
 3. **Third-party components**, which keep their own licences, see [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md):
    ymfm (BSD 3-Clause, © Aaron Giles) and the z80 emulator (MIT, © Nicolas Allemand), both compiled into the embedded engine.
    A Windows build you make yourself also bundles Python, Tcl/Tk, numpy, Pillow, sounddevice, soundfile, libsndfile

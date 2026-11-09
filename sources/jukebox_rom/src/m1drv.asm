@@ -16,6 +16,8 @@
 ;   FF 06   voix declenchees (reponse bits 0-3 FM1-4, 4 SSG, 5 ADPCM-A, 6 ADPCM-B), puis remise a zero
 ;   FF 07   cri du Toasty : echantillon ADPCM-A du bloc sfxp (0x0040, rempli par le constructeur) sur la voie
 ;           sfxch, empruntee a la musique pendant sfxdur ticks ; sfxch >= 6 : pas de son, commande ignoree
+;   FF 08..0B  meme chose avec l'un des 4 sons suivants du bloc (sfxx : debut, fin, duree, comme sfxs/sfxe/sfxdur ;
+;           2.5.36, Bas + Start pendant le Toasty) ; entree vide (debut = fin = 0) : commande ignoree
 ; Voie empruntee : pendant le cri, les ecritures de la musique sur ses registres (08/10/18/20/28 + voie) sont
 ; retenues dans une copie (shad) et son bit est retire des declenchements / coupures (reg 0) ; a la fin, la copie
 ; est reecrite.  Les autres voies (FM, SSG, 5 ADPCM-A, ADPCM-B) ne sont jamais touchees.  silence (fin de piste,
@@ -49,6 +51,8 @@ sfxend: equ 0xFC16              ; tcnt de fin du cri
 shad:   equ 0xFC18              ; 5 octets : derniere valeur ecrite par la musique en 08/10/18/20/28 + voie
 tlseen: equ 0xFC1D              ; 1 = la musique a ecrit le volume general ADPCM-A (port B reg 01) depuis le demarrage
 tlset:  equ 0xFC1E              ; 1 = le cri a mis ce volume a 0x3F (a remettre a 0 a la fin)
+sfxsel: equ 0xFC1F              ; 0 = cri du Toasty, 1..4 = son sfxx + 6 x (n - 1) (choisi par FF 07 / FF 08..0B)
+sfxcd:  equ 0xFC20              ; duree (ticks) du son joue
 stk:    equ 0xFFF0
 
         org 0x0000
@@ -65,6 +69,7 @@ sfxch:  defb 0xFF               ; voie ADPCM-A 0..5 (la moins utilisee par les a
 sfxs:   defw 0                  ; adresse de debut / 256 en V-ROM
 sfxe:   defw 0                  ; adresse de fin / 256 (incluse)
 sfxdur: defw 0                  ; duree en ticks (32 echantillons de sortie)
+sfxx:   defs 24                 ; 4 sons de plus : (debut / 256, fin / 256, duree) x 4, comme sfxs / sfxe / sfxdur
         defs 0x66-$
         jp nmi
 
@@ -78,6 +83,7 @@ boot:   out (0x18),a
         xor a
         ld (ssgv+2),a
         ld (sfxreq),a
+        ld (sfxsel),a
         ld (sfxon),a
         ld (tlseen),a
         ld (tlset),a
@@ -406,7 +412,8 @@ sfxchk: push bc
         ld b,a
         ld c,0xDF               ; gauche + droite, niveau 31
         call ym_b
-        ld hl,sfxs
+        call sx_ent             ; HL = entree du son demande (sfxs + 6 x sfxsel), sx_x si vide
+        jp c,sx_x
         ld e,4                  ; debut lo / hi (10, 18 + voie), fin lo / hi (20, 28 + voie)
 sx_w:   ld a,b
         add a,8
@@ -416,6 +423,11 @@ sx_w:   ld a,b
         inc hl
         dec e
         jr nz,sx_w
+        ld a,(hl)               ; duree de ce son
+        ld (sfxcd),a
+        inc hl
+        ld a,(hl)
+        ld (sfxcd+1),a
         ld a,(tlseen)           ; volume general ADPCM-A jamais ecrit par la musique : 0 = muet -> 0x3F le temps du cri
         or a
         jr nz,sx_v
@@ -432,7 +444,7 @@ sx_v:   ld b,0
         di
         ld hl,(tcnt)
         ei
-        ld de,(sfxdur)
+        ld de,(sfxcd)
         add hl,de
         ld (sfxend),hl
         jr sx_x
@@ -476,6 +488,30 @@ sx_r:   ld c,(hl)
 sx_x:   pop hl
         pop de
         pop bc
+        ret
+
+; HL <- sfxs + 6 x sfxsel ; C (carry) = entree vide (debut = fin = 0) ; modifie A (DE conserve : D = bit de la voie)
+sx_ent: push de
+        ld hl,sfxs
+        ld a,(sfxsel)
+        or a
+        jr z,sx_e2
+        ld de,6
+sx_e1:  add hl,de
+        dec a
+        jr nz,sx_e1
+sx_e2:  ld a,(hl)
+        inc hl
+        or (hl)
+        inc hl
+        or (hl)
+        inc hl
+        or (hl)
+        dec hl
+        dec hl
+        dec hl
+        pop de
+        sub 1                   ; vide (A = 0) -> carry
         ret
 
 ; reg 0 = 0xBF (coupe les 6 voies ADPCM-A), sans la voie du cri s'il est en cours ; modifie A B C D
@@ -611,7 +647,7 @@ nmi_ok: push bc
         jr nz,n_data
         ld a,1
         ld (esc),a
-        jr n_rep
+        jp n_rep
 n_esc:  xor a
         ld (esc),a
         ld a,b
@@ -653,8 +689,18 @@ n_rs2:  cp 4
         ld (paused),a
         jr n_rep
 n_rs3:  cp 7
-        jr nz,n_rep
-        ld a,1                  ; CRI DU TOASTY : joue par la boucle principale (le NMI n'ecrit jamais dans le YM)
+        jr nz,n_rs4
+        xor a                   ; CRI DU TOASTY : joue par la boucle principale (le NMI n'ecrit jamais dans le YM)
+        ld (sfxsel),a
+        ld a,1
+        ld (sfxreq),a
+        jr n_rep
+n_rs4:  sub 7                   ; FF 08..0B : son 1..4 (meme chose, autre echantillon)
+        jr z,n_rep
+        cp 5
+        jr nc,n_rep
+        ld (sfxsel),a
+        ld a,1
         ld (sfxreq),a
         jr n_rep
 n_data: ld hl,(wr)

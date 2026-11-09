@@ -95,6 +95,7 @@
         .equ    WIN,     0x100800       | fenetre LZSS 32 Ko (s'arrete avant la backup RAM en 0x108800)
         .equ    P1CUR,   0x10FD96
         .equ    P1CHG,   0x10FD97
+        .equ    STCURNT, 0x10FDAC       | START/SELECT maintenus (bit 0 START J1, bit 1 SELECT J1)
         .equ    STCHG,   0x10FDAD       | START/SELECT nouvellement presses (bit 0 START J1, bit 1 SELECT J1)
         .equ    FEED,    160            | octets relayes au Z80 par image au plus (= JB_FEED de ngt_studio.py)
         .equ    FEEDMIN, 24             | ... dont au moins FEEDMIN, meme en fin de trame
@@ -994,8 +995,9 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    TO_NCH,  4              | personnages au plus : un tire au sort a chaque economiseur (toasty_pick)
         .equ    V_TOST,  RAM+1720       | Toasty : 0 arme (economiseur affiche), 1 declenche, 2 anime, 3 passe / desactive
         .equ    V_TOSF,  RAM+1722       | Toasty : image de l'animation (index dans to_dy)
-        .equ    V_TOSND, RAM+1724       | Toasty : 1 = cri a envoyer au Z80 (FF 07) par la boucle principale
+        .equ    V_TOSND, RAM+1724       | Toasty : son a envoyer au Z80 par la boucle principale : 1 = cri (FF 07), 2..5 = son MK3 1..4 (FF 08..0B)
         .equ    V_TOSP,  RAM+1726       | Toasty : (long) bloc toastydata du personnage de l'economiseur en cours
+        .equ    V_TOSW,  RAM+1732       | Toasty : Bas ou Start presse (2.5.36), delai restant (images) pour la 2e touche ; 0 = rien en attente
         .equ    V_TOSC,  RAM+1730       | Toasty : index du dernier personnage tire (pas deux fois de suite le meme)
         .equ    V_IPOS,  RAM+260        | position du petit texte (pixels)
         .equ    V_ILEN,  RAM+262        | longueur du petit texte (caracteres)
@@ -1058,12 +1060,17 @@ saver_in:
         cmp.w   #8,d2                  | premier passage (V_ILV pas encore pose) : on compte 1
         bls.s   1f
         moveq   #1,d2
-1:      move.b  V_EACC,d0
+1:      tst.w   V_SAVER                | 2.5.36 : Toasty a l'ecran -> Bas + Start (son MK3) : voir toasty_keys
+        beq.s   2f
+        cmp.w   #2,V_TOST
+        beq     toasty_keys
+2:      move.b  V_EACC,d0
         or.b    V_SACC,d0
         beq.s   3f
         clr.w   V_IDLE                 | activite
         tst.w   V_SAVER
         beq.s   9f
+sv_wake:
         move.w  sr,-(sp)               | reveil : l'appui est consomme
         move.w  #0x2700,sr
         clr.b   V_EACC
@@ -1079,6 +1086,53 @@ saver_in:
 4:      cmp.w   #SAVERDLY,V_IDLE
         bcc     saver_on
 9:      rts
+
+| Toasty a l'ecran (V_SAVER, V_TOST = 2 ; d2 = images ecoulees) : Bas + Start maintenus ensemble = un des 4 sons MK3 au
+| hasard (V_TICKS mod 4 ; V_TOSND 2..5, envoye par toasty_snd), puis l'economiseur s'arrete comme apres un appui
+| ordinaire (retour a l'ecran de lecture, la musique continue).  Seulement dans cette condition : jamais sans Toasty.
+| Bas ou Start seul est retenu V_TOSW images (20) pour laisser le temps a l'autre ; passe ce delai : reveil ordinaire.
+| Tout autre bouton : reveil ordinaire tout de suite.
+toasty_keys:
+        move.b  V_EACC,d0
+        move.b  V_SACC,d1
+        move.b  d0,d3
+        and.b   #0xFD,d3               | autres boutons que Bas (bit 1)
+        move.b  d1,d4
+        and.b   #0xFE,d4               | autre que START (bit 0) : SELECT
+        or.b    d4,d3
+        bne.s   tk_wake
+        and.b   #2,d0                  | Bas ou START nouvellement presse
+        and.b   #1,d1
+        or.b    d1,d0
+        beq.s   tk_held
+        move.w  sr,-(sp)               | ces appuis sont consommes (ils ne reveillent pas tout de suite)
+        move.w  #0x2700,sr
+        and.b   #0xFD,V_EACC
+        and.b   #0xFE,V_SACC
+        move.w  (sp)+,sr
+        tst.w   V_TOSW
+        bne.s   tk_held
+        move.w  #20,V_TOSW
+tk_held:
+        tst.w   V_TOSW
+        beq.s   tk_rts                 | rien en attente
+        btst    #1,P1CUR               | Bas maintenu ?
+        beq.s   tk_t
+        btst    #0,STCURNT             | START maintenu ?
+        bne.s   tk_fire
+tk_t:   sub.w   d2,V_TOSW              | temps ecoule : reveil ordinaire
+        bhi.s   tk_rts
+tk_wake:
+        clr.w   V_TOSW
+        clr.w   V_IDLE
+        bra     sv_wake
+tk_fire:
+        move.w  V_TICKS,d3
+        and.w   #3,d3
+        addq.w  #2,d3                  | 2..5
+        move.w  d3,V_TOSND
+        bra.s   tk_wake
+tk_rts: rts
 
 saver_on:
         lea     V_LVL,a0               | vumetres a zero (ils repartent de zero au reveil)
@@ -1255,6 +1309,7 @@ spr_hide:
 toasty_init:                           | requete 2 (demarrage) : rien d'arme avant le premier economiseur
         clr.w   V_TOSF
         clr.w   V_TOSND
+        clr.w   V_TOSW
         clr.w   V_TOSC
         move.l  #toastydata,V_TOSP
         move.w  #3,V_TOST
@@ -1271,11 +1326,13 @@ toasty_trk:                            | play, piste qui demarre : arme et econo
 toasty_snd:                            | boucle principale, apres feed : cri demande par le VBlank -> FF 07 au Z80
         tst.w   V_TOSND
         beq.s   1f
+        move.w  V_TOSND,d2
         clr.w   V_TOSND
         movem.l d0-d6,-(sp)            | (sendb modifie d0, d3-d6)
         move.b  #0xFF,d0
         bsr     sendb
-        move.b  #0x07,d0
+        move.b  d2,d0                  | 1 -> 07 (cri), 2..5 -> 08..0B (sons MK3, Bas + Start)
+        addq.b  #6,d0
         bsr     sendb
         movem.l (sp)+,d0-d6
 1:      rts
@@ -1310,6 +1367,7 @@ toasty_pick:                           | saver_on : tire le personnage au hasard
         rts
 
 toasty_setup:                          | saver_on (a6 = LSPC), avant que l'economiseur soit visible : arme (option
+        clr.w   V_TOSW
         move.w  #3,V_TOST              |   construite) ou rien ; une animation interrompue au dernier reveil est finie
         movea.l V_TOSP,a0
         tst.w   (a0)
