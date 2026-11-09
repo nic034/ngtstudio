@@ -30,7 +30,9 @@ ROMs you build contain data taken from your own neogeo.zip and romsets; do not
 distribute them.
 It does NOT cover the built-in screen-saver pictures (JB_BOXES_B85 in
 ngt_studio.py and the jukebox tiles). The game box and the Neo Geo console show
-SNK artwork and trademarks, (c) SNK. The Delta Island logo and triangle and the
+SNK artwork and trademarks, (c) SNK. The flying cartridge (jukebox_rom/art/
+jukebox_cartridge.gif, supplied by the project author, all rights reserved by its
+author) is not MIT either. The Delta Island logo and triangle and the
 spinning CD icon are artwork by the author (Nic034 / Delta Island), all rights
 reserved. None of them is licensed under the MIT License.
 It does NOT cover the three "Toasty" pictures (JB_TOASTY_B85 in ngt_studio.py,

@@ -13,6 +13,9 @@ The [MIT License](LICENSE) (© 2026 Nicolas (Nic034)) covers **the code written 
      by this project and **must not be distributed**. Share the tool, not the built ROMs.
 2. **The built-in screen-saver pictures** (embedded in `ngt_studio.py`, `JB_BOXES_B85`, and in the jukebox tiles):
    - the **game box** and the **Neo Geo console** show SNK artwork and trademarks, © SNK. They are not licensed under the MIT License;
+   - the **flying Neo Geo cartridge** (`sources/jukebox_rom/art/jukebox_cartridge.gif`, 2.5.32) was supplied by the project
+     author; it shows a Neo Geo (SNK) cartridge. It is **not** licensed under the MIT License: all rights reserved by its
+     author (to be confirmed by the project author), usable only as part of NGT Studio and of the cartridges it builds;
    - the **Delta Island logo and triangle** and the **spinning CD icon** are artwork by the author (Nic034 / Delta Island),
      **all rights reserved**. They are not licensed under the MIT License. They may be used, unmodified, as part of NGT
      Studio and of the jukebox cartridges it builds for personal use; any other use needs the author's permission.

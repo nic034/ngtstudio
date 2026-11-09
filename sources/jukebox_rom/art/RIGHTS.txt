@@ -15,5 +15,9 @@ all rights reserved by their authors / the people shown. NOT licensed under the 
 restrictions apply (no reuse, copy or modification outside NGT Studio without permission).
 Rights holders' names: TO BE COMPLETED by the project author.
 
+jukebox_cartridge.gif - flying Neo Geo cartridge of the screen saver (72-frame rotation, supplied by Nicolas /
+Nic034, 2.5.32). Shows a Neo Geo (SNK) cartridge. NOT licensed under the MIT License; all rights reserved by its
+author (to be confirmed by the project author).
+
 Toasty sound (JB_TOASTY_SND_B85 in ngt_studio.py, not a file of this folder): the "Toasty!" shout of
 Mortal Kombat II, (c) Midway Games / Warner Bros.  NOT licensed under the MIT License (see ../../../NOTICE.md).

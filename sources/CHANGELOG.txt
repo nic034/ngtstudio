@@ -1,3 +1,19 @@
+2.5.32 2026-11-09  Jukebox screen saver:
+                   NEW  a flying NEO GEO CARTRIDGE (animated GIF of 72 frames supplied by Nicolas, art/jukebox_cartridge.gif,
+                        built in as the 5th flying object, 64 x 48 sprite grid, picture 53 x 42 px: about the size of the
+                        console / triangle).  jb_box_frames reads animated GIFs on a magenta background; pack_boxes.py
+                        takes GIFs and keep:K (re-use a built-in sheet)
+                   CHANGED the objects now fly in equal shares, in turn: box, console, logo, triangle, cartridge
+                        (before: the game box 4 times out of 5, the other objects 1 in 20 each).  Measured in MAME over
+                        5 minutes: 42 / 42 / 42 / 41 / 41 departures (was 168 / 14 / 14 / 13); objects in flight at
+                        once: average 3.5 (3.65 before), at most 7 (9 before); sprites per line: 91 at most, 89 in
+                        the Toasty zone (limit 96)
+                   FIXED  with exactly 4 picture sheets (now 5) no object flew at all, and with none the object
+                        drawing was not skipped (the sheet-count test followed the wrong comparison); tested with
+                        0, 1, 4, 5 and 6 sheets
+                   CHANGED the spinning CD (fixed, top right) is now the 6th sheet (slot 5, palette 24).  With your own
+                        sheets (--boxes / jukebox_boxes(n).png): sheets 1..5 fly, sheet 6 is the CD; before, sheet 5 was
+                        the CD
 2.5.31 2026-11-09  Jukebox ROM: Toasty apparition slightly shorter: 138 frames (2.3 s) instead of 150 (2.5 s), the
                    hold at the top is 12 frames shorter (to_dy); rise and descent unchanged.  The sound is untouched
                    and complete: measured in MAME (same ROM with / without the sound, recordings subtracted):

@@ -452,3 +452,24 @@ ci-dessous (amplitude minimale, espacement des objets).
   sa longueur** avec le décodage `adpcma_decode` du son intégré, rien après la fin (reste : musique décalée de 2 échantillons).
 - Fichier propre fourni : 0,68 s, voix de ~0,06 s à ~0,66 s ; `jb_toasty_sound` ne retire que ce qui est à plus de 36 dB
   sous la crête aux deux bouts (pré-silence de 55 ms, fin nette) : aucune partie audible n'est coupée.
+
+## Objets volants : cartouche + parts égales (2.5.32)
+
+- **Cartouche** : `art/jukebox_cartridge.gif` (GIF animé, 72 images 384 x 432, fond magenta pur ; fourni par Nicolas) lue par
+  `jb_box_frames` (chemin `.gif` : fenêtre commune = union des boîtes englobantes des images, rotation centrée ; mêmes
+  réductions / palette de 14 couleurs / lisère que les planches PNG). Régénérée avec
+  `python tools/pack_boxes.py keep:0 keep:1 keep:2 keep:3 art/jukebox_cartridge.gif@1.2 keep:4` (`keep:K` reprend une
+  planche déjà intégrée : leurs PNG ne sont pas dans le dépôt). Objet large (4 colonnes x 3 rangées, 53 x 42 px) : mêmes
+  règles que la console et le triangle (jamais deux larges à moins de `BOX_GAPW` images, toujours seul sur ses lignes).
+  72 images x 12 tuiles = 864 tuiles C-ROM ; total des planches de 0xA00 à 0x1898 (limite 0x2500).
+- **Planches** : 6 (`BOX_NP`) : 0..4 volent (boîte, console, logo, triangle, cartouche), 5 = CD fixe (`boxdata+2+5*BOX_DSC`,
+  palette 24 = 19 + 5 ; avant : planche 4, palette 23). `saver_on` plafonne les planches volantes à 5 (`cmp #5,d6`).
+- **Parts égales** : plus de compteur `V_BOXC` (la boîte 4 départs sur 5) : `V_BOXW` fait tourner les planches volantes à
+  chaque départ (0, 1, 2, 3, 4, 0...). Un objet large attend toujours ses 63 images d'écart (rien ne part entre-temps).
+- **Mesuré (MAME 0.264, vrai BIOS, `mame_tests/box_mix.lua`, 5 min d'économiseur)** : avant (2.5.31) départs 168 / 14 / 14 / 13 (/ 0 /
+  0), objets en vol moyenne 3,65 (max 9), sprites par ligne 89 ; après : 42 / 42 / 42 / 41 / 41, moyenne 3,54 (max 7),
+  91 au pire (ligne 109, hors zone du Toasty) ; avec le Toasty (`toasty_stress.lua`, 6 min, 21 445 images animées) :
+  91 au pire, 89 en lignes 120-223, jamais au-delà de 96. Coût du VBlank non remesuré (ROM non instrumentée).
+- **Planches personnelles** (`jukebox_boxes(n).png`, `--boxes`) : 1..5 volent, la 6e est le CD ; avant 2.5.32 la 5e était le CD.
+- **Bug corrigé (présent avant 2.5.32)** : `cmp #4,d6 / bls / moveq #4,d6 / beq 49f` : le `beq` lisait le `cmp` quand on branchait, donc exactement 4 planches
+  (5 maintenant) = aucun objet, et 0 planche ne sautait pas le dessin. `tst.w d6` ajouté. Testé avec 0, 1, 4, 5 et 6 planches (`box_mix.lua`).

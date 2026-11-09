@@ -939,7 +939,7 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    V_BOXLW, RAM+362        | depart du dernier objet large (deux larges jamais a moins de BOX_GAPW images)
         .equ    V_CKR,   RAM+364        | 24 mots : ondulation de chaque colonne du damier, << 7 (cache, 12 colonnes par image)
         .equ    V_BOXP,  RAM+412        | 10 longs : description de la planche de chaque emplacement (adresse dans boxdata)
-        .equ    V_BOXC,  RAM+452        | compteur des departs 0..4 : un objet des autres planches au 5e (un pour quatre boites)
+        .equ    V_BOXC,  RAM+452        | (inutilise depuis la 2.5.32 : les planches partent a parts egales, V_BOXW)
         .equ    V_BOXLS, RAM+454        | dernier depart (tout objet)
         .equ    V_CKP1,  RAM+456        | damier : phase de la grande vague (1/4 de pas de sc_sin)
         .equ    V_CKP2,  RAM+458        | damier : phase de la 2e vague
@@ -968,7 +968,7 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
                                        |   (17/22 px par image).  Elles se chevauchent en Y si leurs departs sont a moins de
                                        |   63 images ; avec 32 images au moins, jamais plus de 2 sur une ligne (4 sprites)
         .equ    CD0,     BOX0+BOX_SPR*BOX_N  | CD qui tourne (coin haut droit, position fixe) : 2 sprites (colonnes de
-                                       |   16 x 32, planche 4 de boxdata, voir ngt_studio.py JB_BOXES_B85 et label 49:
+                                       |   16 x 32, planche 5 de boxdata, voir ngt_studio.py JB_BOXES_B85 et label 49:
                                        |   plus bas) ; numerote juste apres les objets volants, avant le texte, pour
                                        |   rester au-dessus du damier/objets mais en dessous du texte qui ondule
         .equ    CD_X,    272            | X ecran du coin haut gauche de l'icone (32 px de large, marge de 16 px a droite)
@@ -1632,10 +1632,11 @@ saver_scroll:
         dbra    d2,17b
         lea     boxdata,a2             | objets : planches fournies au constructeur (0 = aucun objet)
         move.w  (a2),d6
-        cmp.w   #4,d6                  | planche 4 (CD, position fixe) jamais tiree au hasard par le systeme volant :
-        bls.s   77f                    |   limite a 4 planches ici, meme si boxdata en annonce plus (cd_spin la gere a part)
-        moveq   #4,d6
-77:     beq     49f
+        cmp.w   #5,d6                  | planche 5 (CD, position fixe) jamais tiree par le systeme volant (2.5.32 : 5 objets
+        bls.s   77f                    |   volants, planches 0..4) : limite a 5 planches ici, meme si boxdata en annonce
+        moveq   #5,d6                  |   plus (le CD est gere a part)
+77:     tst.w   d6                     | 0 planche : aucun objet (2.5.32 : le beq suivait le cmp : exactement 5 planches (4 avant)
+        beq     49f                    |   n'affichaient aucun objet, et 0 planche n'en sautait pas le dessin)
         move.w  #1,4(a6)
         move.w  V_VBL,d0               | lisere : scintillement leger (couleur 15 des palettes 19..24), triangle de 64 images ;
         move.w  d0,d1                  |   la valeur ne change qu'une image sur 4 : ecrite seulement alors, et seulement pour
@@ -1695,14 +1696,8 @@ saver_scroll:
         cmp.w   #BOX_N,d2
         bcs.s   52b
         bra     53f
-60:     moveq   #0,d3                  | planche : la 1re pour 4 departs sur 5 ; au 5e (compteur V_BOXC 0..4), une des
-        cmp.w   #2,d6                  |   autres, chacune a son tour (V_BOXW) : console, puces... un objet de ces
-        bcs.s   64f                    |   planches pour quatre boites
-        cmp.w   #4,V_BOXC
-        bne.s   64f
-        move.w  V_BOXW,d3
-        addq.w  #1,d3
-64:     move.w  d4,d0                  | un objet large (console, 4 sprites) est toujours seul sur ses lignes : personne ne
+60:     move.w  V_BOXW,d3              | planche : toutes a parts egales, chacune a son tour (2.5.32 : boite, console, logo,
+64:                                    |   triangle, cartouche ; avant : la boite 4 departs sur 5)     move.w  d4,d0                  | un objet large (console, 4 sprites) est toujours seul sur ses lignes : personne ne
         sub.w   V_BOXLW,d0             |   part a moins de BOX_GAPW images apres lui...
         cmp.w   #BOX_GAPW,d0
         bcs     53f
@@ -1716,20 +1711,12 @@ saver_scroll:
         bcs     53f
         move.w  d4,V_BOXLW
 66:     move.w  d4,V_BOXLS
-        tst.w   d3                     | une des autres planches vient de partir : la suivante la prochaine fois
-        beq.s   74f
-        move.w  V_BOXW,d0
+        move.w  V_BOXW,d0              | la planche suivante la prochaine fois
         addq.w  #1,d0
-        move.w  d6,d1
-        subq.w  #1,d1
-        cmp.w   d1,d0
+        cmp.w   d6,d0
         bcs.s   75f
         moveq   #0,d0
 75:     move.w  d0,V_BOXW
-74:     addq.w  #1,V_BOXC
-        cmp.w   #5,V_BOXC
-        bcs.s   73f
-        clr.w   V_BOXC
 73:     move.w  V_BOXA,d1
         bset    d2,d1
         move.w  d1,V_BOXA
@@ -1870,8 +1857,8 @@ saver_scroll:
         bcs     42b
 49:
 | CD qui tourne, coin haut droit, position fixe (n'utilise pas box_v/box_g : independant du systeme d'objets
-| volants ci-dessus).  Planche 4 de boxdata (voir ngt_studio.py, JB_BOXES_B85 : 16 images, 2 x 2 tuiles = 32 x 32 px).
-        lea     boxdata+2+4*BOX_DSC,a1 | description de la planche CD (BOX_DSC = taille d'une description = 48 octets)
+| volants ci-dessus).  Planche 5 de boxdata (voir ngt_studio.py, JB_BOXES_B85 : 16 images, 2 x 2 tuiles = 32 x 32 px).
+        lea     boxdata+2+5*BOX_DSC,a1 | description de la planche CD (BOX_DSC = taille d'une description = 48 octets)
         tst.w   (a1)                   | images == 0 : planche absente (ex. --boxes "") -> rien a dessiner
         beq     cd_done
         move.w  V_VBL,d3               | fondu transparent <-> normal (respiration continue, ~4,3 s/cycle, 2x plus
@@ -1892,7 +1879,7 @@ saver_scroll:
         sub.w   d4,d3                  | d3 = palier x 28 : 14 couleurs x 2 octets par palier de la table
         lea     cd_fade_tab,a2
         adda.w  d3,a2
-        lea     0x4002E2,a3            | palette 23 (19 + planche 4), couleur 1 (0x400000 + 23 x 32 + 1 x 2)
+        lea     0x400302,a3            | palette 24 (19 + planche 5), couleur 1 (0x400000 + 24 x 32 + 1 x 2)
         moveq   #13,d7
 86:     move.w  (a2)+,(a3)+
         dbra    d7,86b
@@ -1901,7 +1888,7 @@ saver_scroll:
         and.w   #15,d0
         mulu    42(a1),d0              | x tuiles par image (colonnes x rangees)
         add.w   4(a1),d0               | + 1re tuile de la planche (d0 = tuile de depart de l'image courante)
-        move.w  #0x1300+(4<<8),d2      | attribut : palette 19 + 4 = palette 23 (ecrite par pal_saver depuis boxdata+8)
+        move.w  #0x1300+(5<<8),d2      | attribut : palette 19 + 5 = palette 24 (ecrite par pal_saver depuis boxdata+8)
         move.w  #1,4(a6)               | SCB1 : 2 colonnes de 2 tuiles (meme agencement que les objets volants)
         move.w  #CD0<<6,d1
         move.w  d1,(a6)
@@ -2604,7 +2591,7 @@ box_v:
 sc_flash: .word 0x0111, 0x0222, 0x0444, 0x0666, 0x0888, 0x0AAA
 | scintillement du lisere des boites : gris de 21/31 a 27/31 (~170 a ~220 sur 255), centre sur le gris 75 % choisi
 sc_twk:   .word 0x7AAA, 0x7AAA, 0x0BBB, 0x7BBB, 0x0CCC, 0x7CCC, 0x0DDD, 0x7DDD
-| fondu du CD (16 paliers de luminosite, 0 = noir/transparent a l'oeil .. 15 = couleurs d'origine de la planche 4 ;
+| fondu du CD (16 paliers de luminosite, 0 = noir/transparent a l'oeil .. 15 = couleurs d'origine de la planche 5 ;
 | genere depuis boxdata par echelle lineaire de chaque composante R/V/B, voir le script de build)
 cd_fade_tab:
         .word   0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
