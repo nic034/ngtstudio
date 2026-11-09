@@ -8,9 +8,10 @@ one frame of each sprite sheet supplied by Nicolas (character on a magenta backg
 (portraits: (c) their authors, all rights reserved, NOT under the MIT License - see art/RIGHTS.txt).
 The 16 frames of a sheet are the same pose moved vertically (with small random differences between frames):
 the jukebox moves a single picture itself (core.S, to_dy), which is smoother.
-Each picture is scaled to fit 112 x 96 px, flush bottom right of its block of 16-px columns.  2.5.33: all the heads
-have the same width on screen (HEAD_ROWS: rows of the source where only the head shows): the largest width that
-fits for every picture (the others are scaled to it); a picture without HEAD_ROWS entry is just fitted.
+Each picture is scaled to fit 112 x 96 px, flush bottom right of its block of 16-px columns.  2.5.35: all the pictures
+have the same HEIGHT on screen (the tallest that fits for every picture: the widest one is limited by 112 px).
+(2.5.33/34 equalised the head width instead, HEAD_ROWS: rows of the source where only the head shows; the head
+width is still reported.)
 
 Format (then lzma/xz, then base85): number of pictures (B), then for each: length (H) + stream =
 columns (B), tile rows (B), palettes (B), first non-empty row of each column
@@ -136,11 +137,11 @@ def pack_one(L, scale):
 
 
 loaded = [load(p) for p in pngs]
-scales = [fit(L[2], L[3]) for L in loaded]
-heads = [L[4] * sc if L[4] else None for L, sc in zip(loaded, scales)]       # largeur de tete a l'ecran au plus grand
-if all(heads):                                                           # meme largeur de tete pour tous : la plus grande
-    target = min(heads)                                                  #   qui tient pour chacun
-    scales = [target / L[4] for L in loaded]
+# 2.5.35: all the characters have the same HEIGHT on screen (the tallest that fits for every picture: 96 px at most,
+# 112 px wide at most).  Their heads then differ (the portraits are not cropped the same way: bust, waist-up...).
+HEIGHT = min(min(WMAX * L[2] / L[3], 16 * ROWS) for L in loaded)
+H_PX = int(HEIGHT)
+scales = [H_PX / L[2] for L in loaded]
 streams, infos = [], []
 for p, L, sc in zip(pngs, loaded, scales):
     st, W, H, cols, first = pack_one(L, sc)

@@ -1,3 +1,11 @@
+2.5.35 2026-11-09  Jukebox screen saver (Toasty Delta Island):
+                   CHANGED the 4 Toasty characters now all have the same HEIGHT on screen: 94 px (the tallest that
+                        fits for all: the mug portrait is limited by the 112 px width).  Replaces the equal head width of
+                        2.5.33 / 2.5.34 (the portraits are not cropped the same way, so the two cannot both hold:
+                        the heads of the bald man and of the man with the cap are now bigger than the other two:
+                        head width 47 / 44 / 67 / 70 px).  Pictures 112 x 94, 68 x 94, 90 x 94, 79 x 94 px
+                        (30 + 27 + 32 + 29 = 118 C-ROM tiles of 256).  Measured on screen: the tops of the 4
+                        characters are on the same line.  tools/pack_toasty.py: HEIGHT = min(fit heights)
 2.5.34 2026-11-09  Jukebox screen saver (Toasty Delta Island):
                    NEW  a 4th Toasty character (art/toasty_frame_4.png, one frame of the sprite sheet supplied by
                         Nicolas: bearded man with a cap and a hoodie).  Now 4 portraits, one drawn at random per screen

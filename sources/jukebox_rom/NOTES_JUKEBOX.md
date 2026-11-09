@@ -497,3 +497,13 @@ ci-dessous (amplitude minimale, espacement des objets).
   des têtes nues. À ajuster à l'oeil si besoin (`HEAD_ROWS` ou un facteur par image).
 - Attention : le test `toasty_chars.lua` est déterministe (V_TICKS identique à chaque passe) : le cycle 1,2,3,0,1,2... observé n'est
   pas représentatif du tirage réel (instant du dernier appui + délai).
+
+## Toasty 2.5.35 : même HAUTEUR pour les 4 personnages
+
+- Demande : « ils doivent avoir la même hauteur à l'écran ». Remplace l'égalité de largeur de tête (2.5.33/34) : les portraits n'ont pas le
+  même cadrage (buste, mi-corps), les deux critères sont incompatibles. `pack_toasty.py` : `HEIGHT = min(min(112 * sh / sw, 96))` = 94 px
+  (limite : le portrait au mug, 112 px de large) ; toutes les images sont mises à 94 px de haut (collées en bas du bloc de 96 px).
+- Résultat : 112x94 / 68x94 / 90x94 / 79x94 px ; têtes 47 / 44 / 67 / 70 px (le chauve et la casquette ont une tête plus grosse) ;
+  30 + 27 + 32 + 29 = 118 tuiles (sur 256 à partir de 0x3F00). Colonnes : 7 / 5 / 6 / 5 (max 7, inchangé).
+- Vérifié dans MAME : `toasty_chars.lua` (8 économiseurs, 4 personnages, 8 cris, 0 anomalie), hauts des 4 personnages alignés sur la capture ;
+  `toasty_stress.lua` rejoué (voir CHANGES).
