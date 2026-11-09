@@ -473,3 +473,15 @@ ci-dessous (amplitude minimale, espacement des objets).
 - **Planches personnelles** (`jukebox_boxes(n).png`, `--boxes`) : 1..5 volent, la 6e est le CD ; avant 2.5.32 la 5e était le CD.
 - **Bug corrigé (présent avant 2.5.32)** : `cmp #4,d6 / bls / moveq #4,d6 / beq 49f` : le `beq` lisait le `cmp` quand on branchait, donc exactement 4 planches
   (5 maintenant) = aucun objet, et 0 planche ne sautait pas le dessin. `tst.w d6` ajouté. Testé avec 0, 1, 4, 5 et 6 planches (`box_mix.lua`).
+
+## Toasty 2.5.33 : les 3 personnages à la même taille
+
+- Avant : chaque image était ajustée dans le même cadre (96 px de haut au plus), mais les sources n'ont pas la même
+  échelle : largeur de tête mesurée à l'écran 47,3 / 45,4 / 68,4 px (le chauve, buste serré, était nettement plus gros).
+- `tools/pack_toasty.py` : `HEAD_ROWS` donne, par image source, la bande de lignes où mesurer la tête (30-130, 20-190,
+  35-80) ; largeur de tête de chaque source -> échelle commune, limitée par la plus contraignante (le portrait SNK, qui
+  remplit les 96 px de haut). Résultat : **tête = 45,4 px pour les trois**, images 108x90 / 69x96 / 61x64 px
+  (27 + 27 + 15 tuiles : 7 / 5 / 4 colonnes ; `JB_TOASTY_TILE0` = 0x3F00 inchangé, plus de marge). Le chauve est donc
+  plus court (buste plus serré à la source), pas plus petit de tête.
+- Vérifié dans MAME (`toasty_chars.lua`, vrai BIOS euro) : 6 économiseurs, 3 personnages différents, 6 cris, 0 anomalie ;
+  captures côte à côte : têtes de même largeur. `toasty_stress.lua` rejoué (6 min) : 0 ligne au-dessus de 96 sprites, pire 91 (89 dans la zone Toasty). Coût IRQ non mesuré (ROM non instrumentée).

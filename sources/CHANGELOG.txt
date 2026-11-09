@@ -1,3 +1,9 @@
+2.5.33 2026-11-09  Jukebox screen saver (Toasty Delta Island):
+                   CHANGED the 3 Toasty characters now appear at the same size: the HEAD width is equal for the three
+                        (45 px on screen; before 47 / 45 / 68 px, the bald portrait was much bigger because his
+                        source picture is a tighter bust).  tools/pack_toasty.py measures the head of each portrait
+                        (HEAD_ROWS) and scales them to the same head width, limited by the tallest portrait fitting
+                        96 px.  Pictures now 108 x 90, 69 x 96 and 61 x 64 px (27 + 27 + 15 tiles, fewer than before)
 2.5.32 2026-11-09  Jukebox screen saver:
                    NEW  a flying NEO GEO CARTRIDGE (animated GIF of 72 frames supplied by Nicolas, art/jukebox_cartridge.gif,
                         built in as the 5th flying object, 64 x 48 sprite grid, picture 53 x 42 px: about the size of the

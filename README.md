@@ -67,6 +67,7 @@ carry your favourite music on a real Neo Geo.
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
 - **2.5.29**: the Toasty check box is now called "Toasty Delta Island".
+- **2.5.33**: the 3 Toasty characters now have the same size on screen (same head width).
 - **2.5.32**: new flying Neo Geo cartridge in the screen saver; the five flying objects now appear in equal shares.
 - **2.5.31**: the Toasty portrait stays on screen a little less (2.3 s instead of 2.5 s); the sound is unchanged and plays in full.
 - **2.5.30**: one single build option, "Toasty Delta Island" (`--toasty`): ticked = 3 portraits + Toasty sound in the ROM, unticked = none. The separate sound options (`--toasty-sound`, `--no-toasty-sound`) are gone.

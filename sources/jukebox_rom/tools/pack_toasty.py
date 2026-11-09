@@ -8,8 +8,9 @@ one frame of each sprite sheet supplied by Nicolas (character on a magenta backg
 (portraits: (c) their authors, all rights reserved, NOT under the MIT License - see art/RIGHTS.txt).
 The 16 frames of a sheet are the same pose moved vertically (with small random differences between frames):
 the jukebox moves a single picture itself (core.S, to_dy), which is smoother.
-Each picture is scaled to fit 112 x 96 px (wide ones: 112 px wide; tall ones: 96 px high), flush bottom right of
-its block of 16-px columns.
+Each picture is scaled to fit 112 x 96 px, flush bottom right of its block of 16-px columns.  2.5.33: all the heads
+have the same width on screen (HEAD_ROWS: rows of the source where only the head shows): the largest width that
+fits for every picture (the others are scaled to it); a picture without HEAD_ROWS entry is just fitted.
 
 Format (then lzma/xz, then base85): number of pictures (B), then for each: length (H) + stream =
 columns (B), tile rows (B), palettes (B), first non-empty row of each column
@@ -54,10 +55,14 @@ def word(c):                        # comme jb_box_frames : RGB 5 bits -> mot de
     return ((r & 1) << 14) | ((g & 1) << 13) | ((b & 1) << 12) | ((r >> 1) << 8) | ((g >> 1) << 4) | (b >> 1)
 
 
-def pack_one(png):
-    # 1. detourage (fond magenta bruite, pas exactement #FF00FF) et reduction : chaque pixel = moyenne des seuls pixels
-    #    du personnage de sa zone (aucune frange rose), transparent si la zone est a moins de 50 % dans le personnage.
-    #    Les petites taches isolees du fond (bruit) sont retirees (seul le plus gros objet et ce qui le touche reste).
+# Taille de la tete : meme largeur de tete a l'ecran pour tous les personnages (2.5.33).  Plages de rangees de l'image
+# source ou seule la tete (cheveux / casquette / oreilles compris, ni epaules ni mug) est presente : sa largeur mesure la tete.
+HEAD_ROWS = {"toasty_frame.png": (30, 130), "toasty_frame_2.png": (20, 190), "toasty_frame_3.png": (35, 80)}
+
+
+def load(png):
+    # detourage (fond magenta bruite, pas exactement #FF00FF) ; les petites taches isolees du fond (bruit) sont retirees
+    # (seul le plus gros objet et ce qui le touche reste), puis recadrage sur le personnage
     a = np.asarray(Image.open(png).convert("RGB")).astype(float)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     fg = ~((r > 170) & (g < 110) & (b > 100) & (b < 230) & (r - g > 120))
@@ -66,13 +71,28 @@ def pack_one(png):
         size = ndimage.sum(fg, lab, range(1, nl + 1))
         keep = [i + 1 for i, v in enumerate(size) if v >= 0.02 * size.max()]
         fg = np.isin(lab, keep)
+    head = None
+    if os.path.basename(png) in HEAD_ROWS:
+        r0, r1 = HEAD_ROWS[os.path.basename(png)]
+        xs = np.nonzero(fg[r0:r1].any(0))[0]
+        head = int(xs.max() + 1 - xs.min())
     ys, xs = np.nonzero(fg)
     a, fg = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1], fg[ys.min():ys.max() + 1, xs.min():xs.max() + 1].astype(float)
     sh, sw = fg.shape
-    if sh * WMAX >= sw * 16 * ROWS:                       # plus haut que large (au rapport 112 : 96) : 96 px de haut
-        H, W = 16 * ROWS, max(1, int(round(sw * 16 * ROWS / sh)))
-    else:
-        W, H = WMAX, int(round(sh * WMAX / sw))
+    return a, fg, sh, sw, head
+
+
+def fit(sh, sw):                    # echelle maximale qui tient dans 112 x 96 px
+    return min(WMAX / sw, 16 * ROWS / sh)
+
+
+def pack_one(L, scale):
+    # reduction : chaque pixel = moyenne des seuls pixels du personnage de sa zone (aucune frange rose), transparent si la
+    # zone est a moins de 50 % dans le personnage
+    a, fg, sh, sw, _ = L
+    W, H = max(1, int(round(sw * scale))), max(1, int(round(sh * scale)))
+    if W > WMAX or H > 16 * ROWS:
+        sys.exit(f"picture too large: {W} x {H} px for {WMAX} x {16 * ROWS}")
     cols = -(-W // 16)
     WT, xoff = cols * 16, cols * 16 - W                   # colle au bord droit de son bloc de colonnes
     img = np.zeros((16 * ROWS, WT, 3)); opaque = np.zeros((16 * ROWS, WT), bool)
@@ -114,11 +134,18 @@ def pack_one(png):
     return bytes(out), W, H, cols, first
 
 
+loaded = [load(p) for p in pngs]
+scales = [fit(L[2], L[3]) for L in loaded]
+heads = [L[4] * sc if L[4] else None for L, sc in zip(loaded, scales)]       # largeur de tete a l'ecran au plus grand
+if all(heads):                                                           # meme largeur de tete pour tous : la plus grande
+    target = min(heads)                                                  #   qui tient pour chacun
+    scales = [target / L[4] for L in loaded]
 streams, infos = [], []
-for p in pngs:
-    st, W, H, cols, first = pack_one(p)
+for p, L, sc in zip(pngs, loaded, scales):
+    st, W, H, cols, first = pack_one(L, sc)
     streams.append(st)
-    infos.append(f"{os.path.basename(p)}: {W} x {H} px, {cols} columns (first rows {first}), {sum(ROWS - f for f in first)} tiles")
+    hw = f", head {L[4] * sc:.1f} px wide" if L[4] else ""
+    infos.append(f"{os.path.basename(p)}: {W} x {H} px{hw}, {cols} columns (first rows {first}), {sum(ROWS - f for f in first)} tiles")
 out = bytes([len(streams)]) + b"".join(struct.pack(">H", len(st)) + st for st in streams)
 b = base64.b85encode(lzma.compress(bytes(out), preset=9 | lzma.PRESET_EXTREME)).decode()
 b = "\n".join(b[i:i + 100] for i in range(0, len(b), 100))
