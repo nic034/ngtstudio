@@ -1,3 +1,5 @@
+2.5.29 2026-11-09  Cartridge tab: the Toasty check box is now called "Toasty Delta Island" (label only; README of the
+                   cartridge says "Toasty Delta Island" too; no change to the ROM)
 2.5.28 2026-11-09  Jukebox ROM:
                    NEW  Toasty: THREE portraits instead of one.  Each screen saver draws one at random (never the
                         same one twice in a row) among the built-in portraits: Aurelien with his mug and two more

@@ -66,6 +66,7 @@ carry your favourite music on a real Neo Geo.
 
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
+- **2.5.29**: the Toasty check box is now called "Toasty Delta Island".
 - **2.5.28**: three "Toasty" portraits drawn at random; the Toasty sound is built in (Mortal Kombat II shout, © Midway / Warner Bros., not MIT: see `NOTICE.md`; `--no-toasty-sound` to leave it out).
 - **2.5.27**: Toasty once per screen saver with an optional sound of your own (`--toasty-sound`); custom screen-saver text (`--saver-text`).
 - **2.5.26**: optional "Aurelien - Toasty" easter egg in the screen saver (`--toasty`).

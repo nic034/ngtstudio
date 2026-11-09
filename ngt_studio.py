@@ -92,9 +92,11 @@ import numpy as np  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(sys.executable if FROZEN else __file__))   # exe : dossier de l'exe
 
 # ---- Version (MAJOR.MINOR.PATCH): bump on every delivery and add a line to CHANGELOG.
-VERSION = "2.5.28"
+VERSION = "2.5.29"
 BUILD_DATE = "2026-11-09"
 CHANGELOG = """\
+2.5.29 2026-11-09  Cartridge tab: the Toasty check box is now called "Toasty Delta Island" (label only; README of the
+                   cartridge says "Toasty Delta Island" too; no change to the ROM)
 2.5.28 2026-11-09  Jukebox ROM:
                    NEW  Toasty: THREE portraits instead of one.  Each screen saver draws one at random (never the
                         same one twice in a row) among the built-in portraits: Aurelien with his mug and two more
@@ -5133,7 +5135,7 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
               "checked by the jukebox at boot (nothing shown if all are present, else a red line 'P2 nn = FIRST MISSING BANK').\n\n"
               + ("Screen saver: rotating objects from " + ", ".join(f"{os.path.basename(p)} ({len(b[0])} frames)" for p, b in zip(box_paths, box)) + ".\n\n" if box else
                  "Screen saver: no rotating objects (disabled).\n\n")
-              + ("Screen saver: \"Toasty\" ON: one of " + str(len(to)) + " portraits (drawn at random, never the same twice in a row) shows up\n"
+              + ("Screen saver: \"Toasty Delta Island\" ON: one of " + str(len(to)) + " portraits (drawn at random, never the same twice in a row) shows up\n"
                  "once per screen saver, bottom right, in front of everything, when the next track starts (not in LOOP\n"
                  "mode, where the track never changes).\n"
                  "Pictures: portraits of real people, all rights reserved (Aurelien / Bouz for the first one).\n"
@@ -7413,7 +7415,7 @@ class CartTab:
                 self.v_scount.set(str(ex))
         self.v_stext.trace_add("write", stext_changed)
         stext_changed()
-        ttk.Checkbutton(sv, text='"Toasty" portraits (one at random, once per screen saver, at the next track)', variable=self.v_toasty,
+        ttk.Checkbutton(sv, text='Toasty Delta Island', variable=self.v_toasty,
                         command=lambda: self.settings.__setitem__("cart_toasty", bool(self.v_toasty.get()))
                         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
         ttk.Checkbutton(sv, text="Toasty sound, or replace it with your own file:", variable=self.v_tsfx,
@@ -7938,7 +7940,7 @@ def main():
     ap.add_argument("--upgrade", metavar="DIR", help="convert old NGT1 files (one per track) found in DIR into NGT2 files (one per game); originals are kept")
     ap.add_argument("--profile", default="standard", choices=sorted(JB_PROFILES), help="with --cart: standard (P1 1 MB + P2 4 MB) or extended (P2 8 MB)")
     ap.add_argument("--boxes", metavar="PNG[,PNG...]", help=f"with --cart --out: one to {JB_BOX_NP} picture sheets of objects rotating in the screen saver (frames on a magenta #FF00FF background, read row by row; the first sheet gives four objects out of five, the others share the fifth in turn); default: the built-in sheets, each one replaced by {JB_BOX_FILES[0]} ... {JB_BOX_FILES[-1]} of the same number if present next to the program; \"\" = none")
-    ap.add_argument("--toasty", action="store_true", help='with --cart --out: a "Toasty" portrait (one of the built-in ones, drawn at random) shows up in the screen saver (bottom right, in front of everything), once per screen saver, when the next track starts, with the built-in Toasty sound')
+    ap.add_argument("--toasty", action="store_true", help='with --cart --out ("Toasty Delta Island"): a portrait (one of the built-in ones, drawn at random) shows up in the screen saver (bottom right, in front of everything), once per screen saver, when the next track starts, with the built-in Toasty sound')
     ap.add_argument("--toasty-sound", metavar="FILE", help="with --toasty: your own sound instead of the built-in one, played with the Toasty over the music (WAV; silences trimmed and level normalised automatically)")
     ap.add_argument("--no-toasty-sound", action="store_true", help="with --toasty: no sound at all (the built-in Toasty shout is (c) Midway / Warner Bros.)")
     ap.add_argument("--saver-text", metavar="TEXT", help=f"with --cart --out: your own screen-saver wavy text ({JB_STEXT_MAX} characters at most; capitals, digits and punctuation, accents removed)")
