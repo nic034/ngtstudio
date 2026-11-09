@@ -991,7 +991,7 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    TOD_SCB1,40             | toastydata : SCB1 des colonnes (TO_NMAX x 6 x 2 mots)
         .equ    TOD_PAL, 40+TO_NMAX*24  | toastydata : palettes
         .equ    TOD_SIZE,TOD_PAL+TO_NPAL*32     | un bloc par personnage (2.5.28)
-        .equ    TO_NCH,  3              | personnages au plus : un tire au sort a chaque economiseur (toasty_pick)
+        .equ    TO_NCH,  4              | personnages au plus : un tire au sort a chaque economiseur (toasty_pick)
         .equ    V_TOST,  RAM+1720       | Toasty : 0 arme (economiseur affiche), 1 declenche, 2 anime, 3 passe / desactive
         .equ    V_TOSF,  RAM+1722       | Toasty : image de l'animation (index dans to_dy)
         .equ    V_TOSND, RAM+1724       | Toasty : 1 = cri a envoyer au Z80 (FF 07) par la boucle principale

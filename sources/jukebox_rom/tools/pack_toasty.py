@@ -3,7 +3,7 @@ at most 112 x 96 px, transparent background, 4 palettes of 15 colours, each 16x1
 
   python tools/pack_toasty.py [art/toasty_frame*.png ...] [path/to/ngt_studio.py]
 
-Pictures (default: art/toasty_frame.png, toasty_frame_2.png, toasty_frame_3.png, in that order; at most JB_TOASTY_NCH):
+Pictures (default: art/toasty_frame.png, toasty_frame_2.png, toasty_frame_3.png, toasty_frame_4.png, in that order; at most JB_TOASTY_NCH):
 one frame of each sprite sheet supplied by Nicolas (character on a magenta background), cropped without loss
 (portraits: (c) their authors, all rights reserved, NOT under the MIT License - see art/RIGHTS.txt).
 The 16 frames of a sheet are the same pose moved vertically (with small random differences between frames):
@@ -24,7 +24,7 @@ from PIL import Image
 from scipy import ndimage
 
 here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NCH_MAX = 3                         # = TO_NCH de core.S / JB_TOASTY_NCH
+NCH_MAX = 4                         # = TO_NCH de core.S / JB_TOASTY_NCH
 pngs = [a for a in sys.argv[1:] if a.lower().endswith(".png")] or sorted(glob.glob(os.path.join(here, "art", "toasty_frame*.png")))
 studio = next((a for a in sys.argv[1:] if a.endswith(".py")), os.path.join(here, "..", "ngt_studio.py"))
 if not 1 <= len(pngs) <= NCH_MAX:
@@ -57,7 +57,8 @@ def word(c):                        # comme jb_box_frames : RGB 5 bits -> mot de
 
 # Taille de la tete : meme largeur de tete a l'ecran pour tous les personnages (2.5.33).  Plages de rangees de l'image
 # source ou seule la tete (cheveux / casquette / oreilles compris, ni epaules ni mug) est presente : sa largeur mesure la tete.
-HEAD_ROWS = {"toasty_frame.png": (30, 130), "toasty_frame_2.png": (20, 190), "toasty_frame_3.png": (35, 80)}
+HEAD_ROWS = {"toasty_frame.png": (30, 130), "toasty_frame_2.png": (20, 190), "toasty_frame_3.png": (35, 80),
+             "toasty_frame_4.png": (88, 275)}
 
 
 def load(png):

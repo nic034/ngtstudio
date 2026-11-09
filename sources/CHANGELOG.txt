@@ -1,3 +1,10 @@
+2.5.34 2026-11-09  Jukebox screen saver (Toasty Delta Island):
+                   NEW  a 4th Toasty character (art/toasty_frame_4.png, one frame of the sprite sheet supplied by
+                        Nicolas: bearded man with a cap and a hoodie).  Now 4 portraits, one drawn at random per screen
+                        saver (never the same twice in a row), same animation, same sound.  Same head width as the
+                        three others (45 px; picture 52 x 61 px, 14 tiles; 83 C-ROM tiles in all, of 256 available).
+                        core.S: TO_NCH = 4 (toastydata grows by 360 bytes, the P-ROM program is 25666 bytes),
+                        JB_TOASTY_NCH = 4, tools/pack_toasty.py takes up to 4 pictures (HEAD_ROWS has the 4th)
 2.5.33 2026-11-09  Jukebox screen saver (Toasty Delta Island):
                    CHANGED the 3 Toasty characters now appear at the same size: the HEAD width is equal for the three
                         (45 px on screen; before 47 / 45 / 68 px, the bald portrait was much bigger because his

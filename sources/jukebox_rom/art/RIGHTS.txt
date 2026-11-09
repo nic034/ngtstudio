@@ -1,5 +1,5 @@
 toasty_frame.png - "Aurelien - Toasty" (NGT Studio jukebox screen saver)
-toasty_frame_2.png, toasty_frame_3.png - the two other "Toasty" portraits (same use)
+toasty_frame_2.png, toasty_frame_3.png, toasty_frame_4.png - the three other "Toasty" portraits (same use)
 
 (c) Aurelien / Bouz - all rights reserved.
 Portrait of a real person. NOT licensed under the MIT License: do not reuse, copy
@@ -10,7 +10,7 @@ The mug shows a Pac-Man design (c) Bandai Namco.
 Portrait d une personne reelle, hors licence MIT : aucune reutilisation, copie ou
 modification en dehors de NGT Studio sans l accord d Aurelien / Bouz.
 
-toasty_frame_2.png and toasty_frame_3.png: portraits of real people supplied by Nicolas (Nic034),
+toasty_frame_2.png, toasty_frame_3.png and toasty_frame_4.png: portraits of real people supplied by Nicolas (Nic034),
 all rights reserved by their authors / the people shown. NOT licensed under the MIT License; the same
 restrictions apply (no reuse, copy or modification outside NGT Studio without permission).
 Rights holders' names: TO BE COMPLETED by the project author.

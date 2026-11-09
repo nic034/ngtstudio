@@ -485,3 +485,15 @@ ci-dessous (amplitude minimale, espacement des objets).
   plus court (buste plus serré à la source), pas plus petit de tête.
 - Vérifié dans MAME (`toasty_chars.lua`, vrai BIOS euro) : 6 économiseurs, 3 personnages différents, 6 cris, 0 anomalie ;
   captures côte à côte : têtes de même largeur. `toasty_stress.lua` rejoué (6 min) : 0 ligne au-dessus de 96 sprites, pire 91 (89 dans la zone Toasty). Coût IRQ non mesuré (ROM non instrumentée).
+
+## Toasty 2.5.34 : 4e personnage
+
+- `art/toasty_frame_4.png` : une image pleine (ligne 3, colonne 2) de la planche 4 x 4 fournie (cellule 265 x 371 px).
+  `HEAD_ROWS["toasty_frame_4.png"] = (88, 275)` (casquette -> menton, ni épaules ni capuche) ; tête = 45,4 px comme les 3 autres,
+  image 52 x 61 px, 4 colonnes, 14 tuiles (total 27 + 27 + 15 + 14 = 83 tuiles sur 256 disponibles à partir de 0x3F00).
+- `core.S` : `TO_NCH` = 4 -> `toastydata` = 4 x 360 octets (+360 : programme 25666 octets, `JB_SECBLK_OFF` 0x63C8, `JB_TOASTY_OFF` 0x224C
+  inchangé) ; `JB_TOASTY_NCH` = 4 ; `pack_toasty.py` : `NCH_MAX` = 4. `toasty_pick` est générique (aucun changement).
+- Limite de la mesure : « largeur de tête » inclut la visière ; le visage du 4e (casquette) paraît donc un peu plus petit que ceux
+  des têtes nues. À ajuster à l'oeil si besoin (`HEAD_ROWS` ou un facteur par image).
+- Attention : le test `toasty_chars.lua` est déterministe (V_TICKS identique à chaque passe) : le cycle 1,2,3,0,1,2... observé n'est
+  pas représentatif du tirage réel (instant du dernier appui + délai).

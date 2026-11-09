@@ -1,6 +1,10 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.34 (2026-11-09)
+- Toasty Delta Island: a 4th character (bearded man with a cap). Now 4 portraits, one drawn at random per screen saver
+  (never the same twice in a row), same animation and sound, same head size as the others.
+
 2.5.33 (2026-11-09)
 - Toasty Delta Island: the 3 characters now have the same size on screen (same head width, 45 px; before 47 / 45 / 68 px,
   the bald one was much bigger). Pictures are 108x90, 69x96 and 61x64 px; the bald portrait is shorter because his source

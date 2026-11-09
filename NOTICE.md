@@ -21,11 +21,11 @@ The [MIT License](LICENSE) (© 2026 Nicolas (Nic034)) covers **the code written 
      Studio and of the jukebox cartridges it builds for personal use; any other use needs the author's permission.
    - You can replace every built-in picture with your own (`jukebox_boxes.png` … `jukebox_boxes6.png` or `--boxes`); a
      picture you provide stays yours.
-   - the **three "Toasty" pictures** (`JB_TOASTY_B85`, `sources/jukebox_rom/art/toasty_frame.png`, `toasty_frame_2.png`,
-     `toasty_frame_3.png`, used only when the Toasty option is ticked) are portraits of real people, **all rights reserved**
+   - the **four "Toasty" pictures** (`JB_TOASTY_B85`, `sources/jukebox_rom/art/toasty_frame.png`, `toasty_frame_2.png`,
+     `toasty_frame_3.png`, `toasty_frame_4.png`, used only when the Toasty option is ticked) are portraits of real people, **all rights reserved**
      by their authors. They are not licensed under the MIT License and may not be reused, copied or modified outside NGT
      Studio without the permission of their authors. First one ("Aurelien - Toasty"): **© Aurelien / Bouz**; its mug shows
-     a Pac-Man design (© Bandai Namco). Rights holders of the two other portraits: to be completed by the project author
+     a Pac-Man design (© Bandai Namco). Rights holders of the three other portraits: to be completed by the project author
      (see `sources/jukebox_rom/art/RIGHTS.txt`).
    - the **Toasty sound** (`JB_TOASTY_SND_B85`, since 2.5.28) is the **"Toasty!" shout of Mortal Kombat II, © Midway
      Games / Warner Bros.** It is **not** covered by the MIT License and this project has no licence for it: converting it
