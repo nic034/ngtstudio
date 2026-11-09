@@ -2562,13 +2562,13 @@ boxdata:  .word   0
 | attribut) = SCB1 de chaque colonne a partir de sa 1re rangee, TO_NPAL palettes de 16 couleurs
 toastydata: .fill TOD_SIZE*TO_NCH, 1, 0
 | Toasty : decalage vertical (+8) image par image a partir du repos ; 255 = fin.  Montee 30 images avec 2 px de
-| depassement, tenue 96 images (gorgee de 2 px), descente 24 images ; ~2,5 s (tools : genere, voir NOTES_JUKEBOX.md)
+| depassement, tenue 84 images (gorgee de 2 px ; 96 jusqu'a la 2.5.30), descente 24 images ; ~2,3 s
 to_dy:
         .byte   93, 82, 73, 64, 56, 49, 42, 36, 31, 26, 23, 19, 16, 14, 12, 10
         .byte   9, 8, 7, 7, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 8
         .byte   8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
         .byte   7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-        .byte   6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+        .byte   6, 6, 6, 6
         .byte   7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8
         .byte   8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
         .byte   8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9

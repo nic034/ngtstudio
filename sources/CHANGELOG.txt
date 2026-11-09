@@ -1,3 +1,7 @@
+2.5.31 2026-11-09  Jukebox ROM: Toasty apparition slightly shorter: 138 frames (2.3 s) instead of 150 (2.5 s), the
+                   hold at the top is 12 frames shorter (to_dy); rise and descent unchanged.  The sound is untouched
+                   and complete: measured in MAME (same ROM with / without the sound, recordings subtracted):
+                   correlation 0.96 with the decoded sound over its whole length (0.61 s + tail), plays to the end
 2.5.30 2026-11-09  Jukebox ROM build, ONE option: "Toasty Delta Island" (check box / --toasty).  Ticked = the 3 portraits
                    AND the Toasty sound (built into this program) are included in the cartridge; unticked = none of
                    them.  Removed: the separate "Toasty sound" check box, the sound file field (Browse / Built-in),

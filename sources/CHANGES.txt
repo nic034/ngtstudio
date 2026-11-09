@@ -1,6 +1,10 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.31 (2026-11-09)
+- Jukebox ROM: the Toasty portrait stays on screen a little less (2.3 s instead of 2.5 s: shorter hold at the top).
+  The sound is unchanged and plays in full (checked in MAME against the decoded sound, whole length).
+
 2.5.30 (2026-11-09)
 - Jukebox ROM build: ONE option, "Toasty Delta Island" (check box in the Cartridge tab, or --toasty). Ticked: the
   3 portraits and the Toasty sound (built into the program) are included in the ROM; unticked: none of them.

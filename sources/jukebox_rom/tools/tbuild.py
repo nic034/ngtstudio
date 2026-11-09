@@ -5,7 +5,8 @@ Requires: m68k-linux-gnu-as/ld/objcopy (binutils for m68k) and z80asm.
   python tools/tbuild.py                          -> build/prom_nosec.bin, build/m1drv.bin, build/tiles.bin
   python tools/tbuild.py OUTDIR game1.ngt ...     -> also a MAME test set in OUTDIR (needs NGT_BIOS=path/neogeo.zip)
                                                      (TOASTY=1 : with the "Toasty Delta Island" option
-                                                      = 3 portraits + sound, SAVER_TEXT="...")
+                                                      = 3 portraits + sound, TOASTY_NOSND=1 : same
+                                                      without the sound (audio difference test), SAVER_TEXT="...")
 """
 import runpy, subprocess, base64, zlib, sys, os, shutil
 here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))          # jukebox_rom/
@@ -41,6 +42,8 @@ if __name__ == "__main__":
         G["JB_BOXDATA_OFF"] = asm.boxdata
         G["JB_TOASTY_OFF"] = asm.toasty
         G["JB_STEXT_OFF"] = asm.stext
+        if os.environ.get("TOASTY_NOSND") == "1":
+            G["JB_TOASTY_SND_USED"] = 0           # test : Toasty (portraits, FF 07) sans le son, pour mesurer le cri par difference
         G["JB_TILES_B64"] = enc(open(os.path.join(here, "build", "tiles.bin"), "rb").read())
         out, files = sys.argv[1], g["ngt_group_files"](sys.argv[2:])
         bios = os.environ.get("NGT_BIOS", "neogeo.zip")

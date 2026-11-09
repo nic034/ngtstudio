@@ -318,7 +318,7 @@ ci-dessous (amplitude minimale, espacement des objets).
   VBlank), colonnes masquées ; X posé une fois au départ ; ensuite seulement 7 SCB3 par image.
 - **Mouvement** : table `to_dy` (dy + 8 par image, 255 = fin), repos `JB_TOASTY_Y` = 132 (haut du bloc ; bas en 228),
   X = `JB_TOASTY_RIGHT` (312) − 16 × colonnes (200 pour le 1er personnage ; bord droit en 312) : montée 30 images (ease-out, 2 px de dépassement), tenue 96 images
-  (gorgée de 2 px), descente 24 images ; 150 images, ~2,5 s.
+  (gorgée de 2 px), descente 24 images ; 138 images, ~2,3 s depuis la 2.5.31 (tenue 84 images au lieu de 96 : 150 images, ~2,5 s avant).
 - **96 sprites par ligne** : mesuré sur la 2.5.25 (6 min, sans Toasty) : 89 au pire en lignes 120-127, 82 en
   128-135, ≤ 77 plus bas. Le haut du bloc ne monte jamais au-dessus de la ligne 130 (repos 132 − 2) et les colonnes
   rognées ne mettent que 3 sprites sur les 16 lignes du haut. 2.5.27, vrai BIOS : Toasty et cri rejoués sans fin
@@ -442,3 +442,13 @@ ci-dessous (amplitude minimale, espacement des objets).
   captures de chacun en bas à droite, devant tout. `toasty_sfx.lua` : cri par défaut, voie 6, 0 déclenchement de la
   musique pendant le cri. Non rejoué : le test de 6 min du nombre de sprites par ligne (`toasty_stress.lua`, mesuré
   en 2.5.27 avec 7 colonnes : les nouveaux personnages en ont 5 et 6) ; pas d'essai sur matériel réel (Darksoft).
+
+## Toasty 2.5.31 : animation raccourcie, cri vérifié en entier
+
+- `to_dy` : 12 images de moins dans la tenue (6 px de décalage constant) -> 138 images, mesuré 914 -> 1052 dans MAME.
+- Le cri est indépendant de l'animation (Z80) : mesuré avec `TOASTY_NOSND=1 python tools/tbuild.py` (même ROM, Toasty
+  et FF 07 présents, son absent) contre la ROM avec son, `-wavwrite`, enregistrements soustraits : le cri dure
+  ~0,64 s (profil identique au fichier : 1re syllabe, creux, 2e partie jusqu'à la fin), **corrélation 0,96 sur toute
+  sa longueur** avec le décodage `adpcma_decode` du son intégré, rien après la fin (reste : musique décalée de 2 échantillons).
+- Fichier propre fourni : 0,68 s, voix de ~0,06 s à ~0,66 s ; `jb_toasty_sound` ne retire que ce qui est à plus de 36 dB
+  sous la crête aux deux bouts (pré-silence de 55 ms, fin nette) : aucune partie audible n'est coupée.
