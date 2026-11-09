@@ -1,3 +1,8 @@
+2.5.30 2026-11-09  Jukebox ROM build, ONE option: "Toasty Delta Island" (check box / --toasty).  Ticked = the 3 portraits
+                   AND the Toasty sound (built into this program) are included in the cartridge; unticked = none of
+                   them.  Removed: the separate "Toasty sound" check box, the sound file field (Browse / Built-in),
+                   --toasty-sound and --no-toasty-sound (old settings keys ignored).  Verified: the 68000 program,
+                   Z80 driver and tiles embedded here are byte for byte what src/ assembles to (tools/embed.py)
 2.5.29 2026-11-09  Cartridge tab: the Toasty check box is now called "Toasty Delta Island" (label only; README of the
                    cartridge says "Toasty Delta Island" too; no change to the ROM)
 2.5.28 2026-11-09  Jukebox ROM:

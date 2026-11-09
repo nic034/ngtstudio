@@ -28,8 +28,8 @@ The [MIT License](LICENSE) (© 2026 Nicolas (Nic034)) covers **the code written 
      Games / Warner Bros.** It is **not** covered by the MIT License and this project has no licence for it: converting it
      to ADPCM-A does not change its rights. It is embedded at the project author's own decision and risk, and can be
      removed at any time (empty `JB_TOASTY_SND_B85` and set `JB_TOASTY_SND_USED = 0`; the option then plays no sound, or
-     the file you give). Untick "Toasty sound" (or `--no-toasty-sound`) to build a cartridge without it. A cartridge built
-     with it contains that sound: like every built ROM, **do not distribute it**. If you redistribute NGT Studio, you
+     nothing is played). There is a single build option, "Toasty Delta Island" (`--toasty`): ticked, the cartridge gets the
+     three portraits **and** the sound; unticked, it gets neither. A cartridge built with it contains that sound: like every built ROM, **do not distribute it**. If you redistribute NGT Studio, you
      redistribute the sound too: remove it first if you have no right to share it.
 3. **Third-party components**, which keep their own licences, see [`sources/THIRD_PARTY_NOTICES.md`](sources/THIRD_PARTY_NOTICES.md):
    ymfm (BSD 3-Clause, © Aaron Giles) and the z80 emulator (MIT, © Nicolas Allemand), both compiled into the embedded engine.

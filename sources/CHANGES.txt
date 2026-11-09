@@ -1,6 +1,12 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.30 (2026-11-09)
+- Jukebox ROM build: ONE option, "Toasty Delta Island" (check box in the Cartridge tab, or --toasty). Ticked: the
+  3 portraits and the Toasty sound (built into the program) are included in the ROM; unticked: none of them.
+  Removed the separate sound check box, the sound file field, --toasty-sound and --no-toasty-sound.
+- Checked: the 68000 program, Z80 driver and tiles embedded in ngt_studio.py are exactly what src/ assembles to.
+
 2.5.29 (2026-11-09)
 - Cartridge tab: the Toasty check box is now called "Toasty Delta Island" (label only, no change to the ROM).
 

@@ -92,9 +92,14 @@ import numpy as np  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(sys.executable if FROZEN else __file__))   # exe : dossier de l'exe
 
 # ---- Version (MAJOR.MINOR.PATCH): bump on every delivery and add a line to CHANGELOG.
-VERSION = "2.5.29"
+VERSION = "2.5.30"
 BUILD_DATE = "2026-11-09"
 CHANGELOG = """\
+2.5.30 2026-11-09  Jukebox ROM build, ONE option: "Toasty Delta Island" (check box / --toasty).  Ticked = the 3 portraits
+                   AND the Toasty sound (built into this program) are included in the cartridge; unticked = none of
+                   them.  Removed: the separate "Toasty sound" check box, the sound file field (Browse / Built-in),
+                   --toasty-sound and --no-toasty-sound (old settings keys ignored).  Verified: the 68000 program,
+                   Z80 driver and tiles embedded here are byte for byte what src/ assembles to (tools/embed.py)
 2.5.29 2026-11-09  Cartridge tab: the Toasty check box is now called "Toasty Delta Island" (label only; README of the
                    cartridge says "Toasty Delta Island" too; no change to the ROM)
 2.5.28 2026-11-09  Jukebox ROM:
@@ -4929,7 +4934,7 @@ def jb_occupancy(ev):
 
 
 def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, boxes=None, toasty=False,
-               toasty_sound=None, saver_text=None, toasty_sfx=True):
+               saver_text=None):
     """Écrit la cartouche dans outdir, dans un ou plusieurs formats :
       mame     : set ngjb.zip (fichiers ROM a la racine du zip) + liste logicielle hash/neogeo.xml
                  (mame neogeo ngjb -hashpath hash -rompath .)
@@ -4937,11 +4942,9 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
       neosd    : fichier neosd/ngjb.neo (TerraOnion NeoSD)
     boxes : planches des objets animes de l'economiseur (voir jb_box_frames), chemins separes par des virgules (2 au
     plus) ; None = planches integrees, chacune remplacee par jukebox_boxes(n).png s'il est a cote du programme ; "" = sans objets.
-    toasty : True = « Aurelien - Toasty » dans l'economiseur, une fois par economiseur, au premier changement de piste
-    (voir core.S) ; False = absent (bloc toastydata a zero, aucune tuile).
-    toasty_sound : fichier son de l'utilisateur (jb_toasty_sound), joue avec le Toasty par-dessus la musique a la place du
-                   son integre ; toasty_sfx=False : aucun son
-    (voie ADPCM-A la moins utilisee des albums, empruntee le temps du cri) ; None = Toasty muet.
+    toasty : option unique « Toasty Delta Island » : True = les 3 portraits (un tire au sort a chaque economiseur, au premier
+    changement de piste ; voir core.S) ET le son integre (voie ADPCM-A la moins utilisee des albums, empruntee le temps du
+    cri) ; False = ni l'un ni l'autre (bloc toastydata a zero, aucune tuile, aucun son).
     saver_text : texte qui ondule personnalise (jb_saver_text, 256 caracteres) ; None ou vide = textes d'origine.
     Refuse si l'évaluation dépasse la marge.  -> (texte du rapport, liste des fichiers écrits)."""
     if not pk["games"] or not any(g["tracks"] for g in pk["games"]):
@@ -5006,7 +5009,7 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
     m1 = bytearray(_jb_bin(JB_M1_B64))
     sfx_note = ""
     vrom = pk["vrom"]
-    snd = (jb_toasty_sound(toasty_sound) if toasty_sound else _jb_builtin_sound()) if toasty and toasty_sfx else None
+    snd = _jb_builtin_sound() if toasty else None
     if snd:
         if m1[JB_SFX_OFF:JB_SFX_OFF + 4] != b"SFX\0":
             raise ValueError("this Z80 driver has no Toasty sound block")
@@ -5139,8 +5142,8 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
                  "once per screen saver, bottom right, in front of everything, when the next track starts (not in LOOP\n"
                  "mode, where the track never changes).\n"
                  "Pictures: portraits of real people, all rights reserved (Aurelien / Bouz for the first one).\n"
-                 + (sfx_note if sfx_note else "Toasty sound: none" + (" (switched off)." if not toasty_sfx else " (no sound in this program, none given).") + "\n")
-                 + ("The built-in Toasty sound is the Mortal Kombat II shout, (c) Midway / Warner Bros.: do not distribute this cartridge.\n" if snd and not toasty_sound else "")
+                 + (sfx_note + "The Toasty sound is the Mortal Kombat II shout, (c) Midway / Warner Bros.: do not distribute this cartridge.\n"
+                    if sfx_note else "Toasty sound: none (removed from this program).\n")
                  + "\n" if to else "")
               + (f"Screen saver text: \"{stext.decode().rstrip()}\" ({len(stext.rstrip())} characters).\n\n" if stext else "")
               +
@@ -7332,8 +7335,6 @@ class CartTab:
         fm = settings.get("cart_formats") or list(JB_FORMATS)
         self.v_fmt = {k: tk.BooleanVar(value=k in fm) for k in JB_FORMATS}
         self.v_toasty = tk.BooleanVar(value=bool(settings.get("cart_toasty", False)))
-        self.v_tsound = tk.StringVar(value=settings.get("cart_toasty_sound", ""))
-        self.v_tsfx = tk.BooleanVar(value=bool(settings.get("cart_toasty_sfx", True)))
         self.v_stext = tk.StringVar(value=settings.get("cart_saver_text", ""))
         self.ev = None
         self.v_info = tk.StringVar(value="Add .ngt files and tick the tracks to keep.")
@@ -7418,21 +7419,6 @@ class CartTab:
         ttk.Checkbutton(sv, text='Toasty Delta Island', variable=self.v_toasty,
                         command=lambda: self.settings.__setitem__("cart_toasty", bool(self.v_toasty.get()))
                         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
-        ttk.Checkbutton(sv, text="Toasty sound, or replace it with your own file:", variable=self.v_tsfx,
-                        command=lambda: self.settings.__setitem__("cart_toasty_sfx", bool(self.v_tsfx.get()))
-                        ).grid(row=2, column=0, sticky="w")
-        ttk.Entry(sv, textvariable=self.v_tsound).grid(row=2, column=1, sticky="we", padx=8, pady=2)
-        sb = ttk.Frame(sv)
-        sb.grid(row=2, column=2, sticky="w")
-
-        def pick_sound():
-            f = filedialog.askopenfilename(title="Sound played with the Toasty (over the music)",
-                                           filetypes=[("Sound", "*.wav *.flac *.ogg"), ("All files", "*.*")])
-            if f:
-                self.v_tsound.set(f)
-        ttk.Button(sb, text="Browse…", command=pick_sound).pack(side="left")
-        ttk.Button(sb, text="Built-in", command=lambda: self.v_tsound.set("")).pack(side="left", padx=4)
-        self.v_tsound.trace_add("write", lambda *_: self.settings.__setitem__("cart_toasty_sound", self.v_tsound.get()))
         bot = ttk.Frame(parent, padding=(10, 4, 10, 10))
         bot.grid(row=8, column=0, sticky="we")
         self.btn_build = ttk.Button(bot, text="Build the jukebox ROM…", style="Accent.TButton", command=self.build)
@@ -7668,13 +7654,8 @@ class CartTab:
             if not fm:
                 messagebox.showinfo("No format", "Tick at least one output format (MAME, Darksoft, NeoSD).")
                 return
-            snd = self.v_tsound.get().strip() or None
-            if snd and self.v_toasty.get() and self.v_tsfx.get() and not os.path.isfile(snd):
-                messagebox.showerror("Toasty sound", f"File not found:\n{snd}")
-                return
             report, files = build_cart(self.pack, self.v_prof.get(), bios, d, formats=fm, toasty=bool(self.v_toasty.get()),
-                                       toasty_sound=snd, saver_text=self.v_stext.get(),
-                                       toasty_sfx=bool(self.v_tsfx.get()))
+                                       saver_text=self.v_stext.get())
         except Exception as ex:
             messagebox.showerror("Failed", str(ex))
             return
@@ -7801,7 +7782,7 @@ def make_app(folder=None, player=None):
             pics=bool(pl.v_pics.get()), rip_wav=bool(ex.v_wav.get()), normalize=bool(ex.v_norm.get()),
             cart_profile=cart.v_prof.get(), cart_bios=cart.v_bios.get(),
             cart_formats=[k for k, v in cart.v_fmt.items() if v.get()], cart_toasty=bool(cart.v_toasty.get()),
-            cart_toasty_sound=cart.v_tsound.get(), cart_toasty_sfx=bool(cart.v_tsfx.get()), cart_saver_text=cart.v_stext.get(),
+            cart_saver_text=cart.v_stext.get(),
             cart_files=[m for g in cart.games for m in (_NGT_VIRT.get(g["path"]) or [g["path"]])],   # NGT1 : vrais fichiers
             tab=nb.index(nb.select()), fullscreen=win["full"], zoomed=is_zoomed(),
             geometry=win["geo"] or root.geometry(), version=VERSION)
@@ -7941,8 +7922,6 @@ def main():
     ap.add_argument("--profile", default="standard", choices=sorted(JB_PROFILES), help="with --cart: standard (P1 1 MB + P2 4 MB) or extended (P2 8 MB)")
     ap.add_argument("--boxes", metavar="PNG[,PNG...]", help=f"with --cart --out: one to {JB_BOX_NP} picture sheets of objects rotating in the screen saver (frames on a magenta #FF00FF background, read row by row; the first sheet gives four objects out of five, the others share the fifth in turn); default: the built-in sheets, each one replaced by {JB_BOX_FILES[0]} ... {JB_BOX_FILES[-1]} of the same number if present next to the program; \"\" = none")
     ap.add_argument("--toasty", action="store_true", help='with --cart --out ("Toasty Delta Island"): a portrait (one of the built-in ones, drawn at random) shows up in the screen saver (bottom right, in front of everything), once per screen saver, when the next track starts, with the built-in Toasty sound')
-    ap.add_argument("--toasty-sound", metavar="FILE", help="with --toasty: your own sound instead of the built-in one, played with the Toasty over the music (WAV; silences trimmed and level normalised automatically)")
-    ap.add_argument("--no-toasty-sound", action="store_true", help="with --toasty: no sound at all (the built-in Toasty shout is (c) Midway / Warner Bros.)")
     ap.add_argument("--saver-text", metavar="TEXT", help=f"with --cart --out: your own screen-saver wavy text ({JB_STEXT_MAX} characters at most; capitals, digits and punctuation, accents removed)")
     ap.add_argument("--formats", default="mame,darksoft,neosd", help="with --cart --out: output formats, comma-separated (mame, darksoft, neosd)")
     ap.add_argument("--bios", metavar="ZIP", help="with --cart --out: Neo Geo BIOS zip (neogeo.zip), source of the security block and of the font; if absent, looked for next to the program (exe or script) and in the folder of the last ROM opened in the Extract tab")
@@ -8061,12 +8040,8 @@ def main():
                 print(f"Rejected {f}: {why}")
             print(f"BIOS: {bios}")
             fm = tuple(x.strip() for x in a.formats.split(",") if x.strip() in JB_FORMATS) or JB_FORMATS
-            if (a.toasty_sound or a.no_toasty_sound) and not a.toasty:
-                print("warning: --toasty-sound / --no-toasty-sound are ignored without --toasty", file=sys.stderr)
-            if a.toasty_sound and a.no_toasty_sound:
-                print("warning: --toasty-sound is ignored with --no-toasty-sound", file=sys.stderr)
             report, files = build_cart(pk, a.profile, bios, a.out, formats=fm, boxes=a.boxes, toasty=a.toasty,
-                                       toasty_sound=a.toasty_sound, saver_text=a.saver_text, toasty_sfx=not a.no_toasty_sound)
+                                       saver_text=a.saver_text)
             if a.boxes is None:
                 print(jb_box_note())
             print(f"{len(files)} files written to {a.out} (see README_jukebox.txt)")

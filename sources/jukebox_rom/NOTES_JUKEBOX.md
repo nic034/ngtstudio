@@ -435,8 +435,8 @@ ci-dessous (amplitude minimale, espacement des objets).
   X propre à chaque bloc ; Y de repos et animation communs (`to_dy`). Jamais plus de 7 sprites : budget par ligne inchangé.
 - **Son intégré** : `JB_TOASTY_SND_B85` (ADPCM-A de 5 888 octets issu du fichier propre fourni par Nicolas, lzma + base85 :
   6 191 caractères) + `JB_TOASTY_SND_USED` ; `tools/pack_toasty_snd.py fichier.mp3|wav` le régénère. Cri (c) Midway /
-  Warner Bros. : voir `NOTICE.md`. `build_cart(toasty_sfx=False)` / `--no-toasty-sound` : sans son ; `toasty_sound=` : le
-  fichier de l'utilisateur remplace le son intégré.
+  Warner Bros. : voir `NOTICE.md`. Depuis la 2.5.30 il n'y a qu'une option, « Toasty Delta Island » (`toasty=True` / `--toasty`) : portraits + son
+  ensemble, ou rien ; plus de choix de son séparé (`jb_toasty_sound` ne sert plus qu'à `pack_toasty_snd.py`).
 - **Mesuré (MAME 0.264, vrai BIOS euro)** : `mame_tests/toasty_chars.lua`, 12 économiseurs de suite : les 3 personnages
   tirés (1,2,1,0,2,0,2,1,2,1,0,2), jamais deux fois de suite le même, 12 cris pour 12 apparitions, 0 anomalie ;
   captures de chacun en bas à droite, devant tout. `toasty_sfx.lua` : cri par défaut, voie 6, 0 déclenchement de la
