@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+sources/jukebox_rom/build/*.elf
+sources/jukebox_rom/build/*.o
+sources/m1render_*
