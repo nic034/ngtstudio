@@ -58,6 +58,7 @@ carry your favourite music on a real Neo Geo.
 - Plays automatically from power-on.
 - **Amiga-style screen saver** after 5 minutes without a press: a rainbow sine scroll that reacts to the music,
   a rippling isometric checkerboard, a spinning CD icon, drifting objects and a point sphere that bounces across the bottom of the screen.
+  A mini VU meter, a banner at each track change and five colour themes for the text (2.5.37).
   Any press wakes it up. The player animations stop while it is on and resume on wake-up.
 - Works on MVS and AES, with the original BIOS and UniBIOS 4.0 (tested in MAME with several BIOS versions).
 - Hardware limits are checked in MAME: sprites per line and the vertical blank.
@@ -67,6 +68,8 @@ carry your favourite music on a real Neo Geo.
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
 - **2.5.29**: the Toasty check box is now called "Toasty Delta Island".
+- **2.5.38**: screen saver: the checkerboard is back to its fixed dark grey (the changing tint and the pulse on drum hits of 2.5.37 were tiring for the eyes); the other 2.5.37 additions stay.
+- **2.5.37**: screen saver: mini VU meter, track banner at each track change, 5 colour themes for the wavy text, checkerboard that changes tint and pulses on drum hits (no sprite added).
 - **2.5.36**: DOWN + START while the Toasty portrait is on screen plays one of 4 Mortal Kombat 3 sounds at random, then the screen saver stops (sounds © Midway / Warner Bros., not MIT: see `NOTICE.md`).
 - **2.5.35**: the 4 Toasty characters now have the same height on screen (94 px).
 - **2.5.34**: a 4th Toasty character (4 portraits drawn at random).

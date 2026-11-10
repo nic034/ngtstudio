@@ -332,6 +332,20 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    V_TOSP,  RAM+1726       | Toasty : (long) bloc toastydata du personnage de l'economiseur en cours
         .equ    V_TOSW,  RAM+1732       | Toasty : Bas ou Start presse (2.5.36), delai restant (images) pour la 2e touche ; 0 = rien en attente
         .equ    V_TOSC,  RAM+1730       | Toasty : index du dernier personnage tire (pas deux fois de suite le meme)
+| 2.5.37 : mini vumetre (couche fix), annonce de piste, themes de couleur du grand texte
+| (2.5.38 : la teinte du damier de la 2.5.37 est retiree, genante pour les yeux : gris fixe 0x0222, comme avant)
+        .equ    V_THEME, RAM+1760       | grand texte : theme de couleurs (0 = arc-en-ciel d'origine .. TH_N-1), change a chaque passage
+        .equ    V_ANN,   RAM+1762       | annonce de piste : 0 rien, 1 demandee (boucle principale : ann_build), 2 le bandeau
+                                        |   s'ouvre (VBlank), 4 affichee (fondu, tenue, fondu), 5 le bandeau se referme
+        .equ    V_ANNT,  RAM+1764       | annonce : images ecoulees dans l'etat en cours
+        .equ    V_ANNB,  RAM+1766       | annonce : 2 rangees de ANN_W caracteres (0x7F = note de musique)
+        .equ    TH_N,    5              | themes du grand texte
+        .equ    ANN_W,   22             | annonce : largeur (cases), centree entre le vumetre et le CD
+        .equ    ANN_COL, 10             | annonce : colonnes 10..31 (x 80..255), une case d'ecart avec le vumetre
+        .equ    ANN_ROW, 6              | annonce : rangees 6 (titre) et 7 (piste) de la couche fix = y 32..47
+        .equ    ANN_END, 240            | annonce : duree (images) : fondu 16 + tenue + fondu 16
+        .equ    HUD_VCOL, 2             | mini vumetre : 7 colonnes 2..8 (x 16..71, marge de 16 px comme le CD a droite)
+        .equ    HUD_VROW, 5             | mini vumetre : 4 rangees 5..8 (y 24..55, la hauteur du CD)
         .equ    V_IPOS,  RAM+260        | position du petit texte (pixels)
         .equ    V_ILEN,  RAM+262        | longueur du petit texte (caracteres)
         .equ    V_INEW,  RAM+264        | 1 = reconstruire le petit texte en fin d'image
@@ -558,6 +572,15 @@ saver_on:
         addq.w  #1,d7
         cmp.w   #CK_N+1,d7
         bcs.s   4b
+        clr.w   V_THEME                | 2.5.37 : arc-en-ciel d'origine au premier passage du texte
+        clr.w   V_ANNT
+        clr.w   V_ANN                  | annonce de la piste en cours a l'entree dans l'economiseur (lecture seulement)
+        tst.w   V_PLAY
+        beq.s   8f
+        tst.w   V_PAUSE
+        bne.s   8f
+        move.w  #1,V_ANN
+8:
         clr.w   V_SCENE                | essai sphere : on demarre sur le texte qui ondule ; la sphere apparait/disparait
         move.w  #SC_TXT_PASSES,V_SCPASS |   seulement quand le texte vient de boucler (derniere lettre sortie de l'ecran)
         bsr     sphere_init            | tuiles de la sphere (une fois) + etat de rotation a zero
@@ -651,6 +674,7 @@ toasty_init:                           | requete 2 (demarrage) : rien d'arme ava
 toasty_trk:                            | play, piste qui demarre : arme et economiseur affiche -> declenche (d0-d1 inchanges)
         tst.w   V_SAVER                | (play et saver_on tournent dans la boucle principale ; le VBlank ne fait que
         beq.s   1f                     |   1 -> 2 -> 3 : pas de conflit)
+        move.w  #1,V_ANN               | 2.5.37 : annonce de la nouvelle piste (construite par saver_info, posee par le VBlank)
         tst.w   V_TOST
         bne.s   1f
         move.w  #1,V_TOST
@@ -817,7 +841,10 @@ pick_text:
 
 | boucle principale : le petit texte (temps) est reconstruit hors interruption, apres chaque changement de caractere
 saver_info:
-        tst.w   V_INEW
+        cmp.w   #1,V_ANN               | 2.5.37 : annonce de piste demandee (saver_on, toasty_trk) : texte construit ici
+        bne.s   2f
+        bsr     ann_build
+2:      tst.w   V_INEW
         beq.s   1f
         clr.w   V_INEW
         bsr     build_info
@@ -925,8 +952,12 @@ saver_scroll:
         add.w   d1,d1
         lea     sc_flash-2,a0
         move.w  (a0,d1.w),d6           | eclaircissement des couleurs : OU sur les composantes R, V, B
-32:     lea     0x400202,a0            | palette 16, couleurs 1..8 (une par paire de rangees des lettres) :
-        lea     hues,a1                | arc-en-ciel qui defile verticalement dans le texte
+32:     bsr     hud_pal                | 2.5.37 : fondu de l'annonce (palettes : ici, debut du retour de trame)
+        lea     0x400202,a0            | palette 16, couleurs 1..8 (une par paire de rangees des lettres) :
+        move.w  V_THEME,d3             | degrade du theme en cours (0 = hues, l'arc-en-ciel d'origine) qui defile
+        lsl.w   #2,d3                  |   verticalement dans le texte
+        lea     th_tab,a1
+        movea.l (a1,d3.w),a1
         move.w  V_VBL,d2
         lsr.w   #1,d2
         moveq   #7,d1
@@ -1312,6 +1343,7 @@ saver_scroll:
         move.w  #((CD_X+16)&0x1FF)<<7,d2
         move.w  d2,2(a6)
 cd_done:
+        bsr     hud_fix                | 2.5.37 : mini vumetre / annonce de piste (couche fix), avant le texte ou la sphere
         tst.w   V_SCENE                | essai : la bascule texte <-> sphere est decidee dans scene_pass (appele quand
         beq.s   64f                    |   le texte qui ondule vient de boucler) ; ici on ne fait plus qu'aiguiller
         bsr     sphere_draw
@@ -1424,6 +1456,222 @@ cd_done:
 99:     movem.l (sp)+,d0-d7/a0-a2     | epilogue partage : "bra 99f" (sphere active) doit atterrir ICI, avant la
         rts                             |   restauration des registres empiles au debut de saver_scroll, pas apres
 
+| ---------------------------------------------------------------- effets 2.5.37 (palettes et couche fix seulement)
+| Aucun sprite de plus : la limite de 96 sprites par ligne n'est pas concernee.  La couche fix passe devant les sprites.
+|
+| hud_pal : appelee par saver_scroll avec les autres palettes, au debut du retour de trame (jamais pendant l'affichage).
+|   Annonce : fondu des lettres (palettes 0 et 8, couleur 1 ; elles ne servent a rien d'autre pendant l'economiseur,
+|   pal_norm les remet au reveil).  Palier 0 = la couleur du fond des cases (couleur 2, celle des palettes a 50 %
+|   de l'economiseur, lue dans la palette : valable pour les deux themes) : lettres invisibles sur le bandeau.
+|   (La 2.5.37 y faisait aussi deriver la couleur du damier ; retire en 2.5.38, le damier reste gris 0x0222.)
+| Modifie d0-d1, a0.
+hud_pal:
+        move.w  V_ANN,d0
+        cmp.w   #2,d0                  | le bandeau s'ouvre : lettres eteintes
+        beq.s   3f
+        cmp.w   #4,d0
+        bne.s   9f
+        move.w  V_ANNT,d1
+        addq.w  #1,d1
+        move.w  d1,V_ANNT
+        cmp.w   #ANN_END,d1
+        bcs.s   1f
+        clr.w   V_ANNT                 | fini : hud_fix referme le bandeau
+        move.w  #5,V_ANN
+        bra.s   9f
+1:      cmp.w   #16,d1
+        bls.s   4f                     | fondu d'entree : palier = images ecoulees (1..16)
+        cmp.w   #ANN_END-17,d1
+        bcs.s   9f                     | tenue : rien a ecrire
+        neg.w   d1
+        add.w   #ANN_END-1,d1          | fondu de sortie : 16..0
+        bne.s   4f
+3:      move.w  0x400004,0x400002      | palier 0 : couleur du fond
+        move.w  0x400104,0x400102
+        rts
+4:      add.w   d1,d1
+        lea     fd_w,a0
+        move.w  (a0,d1.w),0x400002     | palette 0, couleur 1 : titre de l'album
+        lea     fd_y,a0
+        move.w  (a0,d1.w),0x400102     | palette 8, couleur 1 : piste
+9:      rts
+
+| hud_fix : appelee par saver_scroll apres le CD, avant le texte ou la sphere (a6 = LSPC) : couche fix.
+|   - annonce : le bandeau (2 rangees de ANN_W cases) s'ouvre du centre vers les bords (V_ANN = 2 : une colonne de
+|     chaque cote par image, 4 cases ; 11 images) et se referme des bords vers le centre (5 : cases transparentes) ;
+|   - mini vumetre : un groupe de voies par image (0-2, 3-4, 5-6), rien dans l'image la plus chargee (celle ou le
+|     petit texte se reecrit) : chaque voie est redessinee une image sur 4 (15 fois par seconde), 4 cases par voie,
+|     tuiles et couleurs des vumetres de l'interface (vupal ; palettes a 50 %).
+| Modifie d0-d3/d5/d7, a0-a3 ; laisse l'increment VRAM a 1.
+hud_fix:
+        move.w  #1,4(a6)               | une colonne a la fois : case suivante vers le bas
+        move.w  V_ANN,d0
+        cmp.w   #2,d0
+        beq.s   1f
+        cmp.w   #5,d0
+        bne     hud_vu
+        move.w  V_ANNT,d1              | fermeture, image k = 0..10 : colonnes k et ANN_W - 1 - k
+        move.w  d1,d0
+        lsl.w   #5,d0
+        add.w   #0x7000+ANN_COL*32+ANN_ROW,d0
+        move.w  d0,(a6)
+        move.w  #T_CLEAR,2(a6)
+        move.w  #T_CLEAR,2(a6)
+        moveq   #ANN_W-1,d0
+        sub.w   d1,d0
+        lsl.w   #5,d0
+        add.w   #0x7000+ANN_COL*32+ANN_ROW,d0
+        move.w  d0,(a6)
+        move.w  #T_CLEAR,2(a6)
+        move.w  #T_CLEAR,2(a6)
+        addq.w  #1,d1
+        move.w  d1,V_ANNT
+        cmp.w   #ANN_W/2,d1
+        bcs.s   hud_vu
+        clr.w   V_ANN
+        bra.s   hud_vu
+1:      lea     V_ANNB,a0              | ouverture, image k = 0..10 : colonnes ANN_W/2 - 1 - k et ANN_W/2 + k
+        move.w  V_ANNT,d3
+        moveq   #ANN_W/2-1,d0
+        sub.w   d3,d0
+        bsr     ann_col
+        moveq   #ANN_W/2,d0
+        add.w   d3,d0
+        bsr     ann_col
+        addq.w  #1,d3
+        move.w  d3,V_ANNT
+        cmp.w   #ANN_W/2,d3
+        bcs.s   hud_vu
+        clr.w   V_ANNT                 | ouvert : fondu des lettres (hud_pal)
+        move.w  #4,V_ANN
+hud_vu: lea     V_LVL,a0
+        lea     vupal,a1
+        lea     hud_vt,a2
+        move.w  V_IPOS,d0              | jamais dans l'image ou le petit texte se reecrit (position & 3 = 0, la plus
+        and.w   #3,d0                  |   chargee : 36 lignes au pire mesurees, 33 pour les trois autres) ; sinon un
+        beq.s   9f                     |   groupe de voies par image : 0-2, 3-4, 5-6
+        add.w   d0,d0
+        lea     hud_grp-2,a3
+        moveq   #0,d5                  | premiere voie, nombre de voies - 1
+        move.b  (a3,d0.w),d5
+        moveq   #0,d7
+        move.b  1(a3,d0.w),d7
+1:      move.w  d5,d0                  | adresse fix = 0x7000 + colonne x 32 + rangee
+        lsl.w   #5,d0
+        add.w   #0x7000+HUD_VCOL*32+HUD_VROW,d0
+        move.w  d0,(a6)
+        moveq   #0,d1                  | niveau 0..128 -> 0..32 px -> 4 octets de hud_vt (case du haut d'abord)
+        move.b  (a0,d5.w),d1
+        cmp.w   #128,d1
+        bls.s   2f
+        move.w  #128,d1
+2:      and.w   #0xFC,d1
+        lea     (a2,d1.w),a3
+        move.w  d5,d0
+        add.w   d0,d0
+        move.w  (a1,d0.w),d2           | couleur de la voie
+        add.w   #T_V0,d2
+        moveq   #0,d0
+        move.b  (a3)+,d0
+        add.w   d2,d0
+        move.w  d0,2(a6)
+        moveq   #0,d0
+        move.b  (a3)+,d0
+        add.w   d2,d0
+        move.w  d0,2(a6)
+        moveq   #0,d0
+        move.b  (a3)+,d0
+        add.w   d2,d0
+        move.w  d0,2(a6)
+        moveq   #0,d0
+        move.b  (a3)+,d0
+        add.w   d2,d0
+        move.w  d0,2(a6)
+        addq.w  #1,d5
+        dbra    d7,1b
+9:      rts
+| colonne d0 (0..ANN_W-1) du bandeau : case du titre (palette 0) puis case de la piste (palette 8) ; a0 = V_ANNB.
+| Modifie d1.
+ann_col:
+        move.w  d0,d1
+        lsl.w   #5,d1
+        add.w   #0x7000+ANN_COL*32+ANN_ROW,d1
+        move.w  d1,(a6)
+        moveq   #0,d1
+        move.b  (a0,d0.w),d1
+        bsr.s   ann_t
+        move.w  d1,2(a6)
+        moveq   #0,d1
+        move.b  ANN_W(a0,d0.w),d1
+        bsr.s   ann_t
+        or.w    #PAL8,d1
+        move.w  d1,2(a6)
+        rts
+ann_t:  cmp.w   #0x7F,d1               | 0x7F = note de musique (tuile de l'interface)
+        bne.s   1f
+        move.w  #T_NOTE,d1
+1:      rts
+
+| annonce de piste : V_ANNB <- titre de l'album centre (ANN_W caracteres au plus) puis "(note) TRACK nn/nn (note)" centre.
+| Boucle principale (saver_info), V_ANN = 1 ; le VBlank ne lit V_ANNB qu'a partir de V_ANN = 2, pose en dernier.
+ann_build:
+        movem.l d0-d4/a0-a3,-(sp)
+        lea     V_ANNB,a0
+        moveq   #2*ANN_W-1,d0
+1:      move.b  #0x20,(a0)+
+        dbra    d0,1b
+        move.w  V_PG,d0
+        bsr     gentry                 | a1 = entree du jeu : titre (24 octets), +26 nombre de pistes
+        moveq   #0,d0                  | longueur du titre, plafonnee a ANN_W
+2:      tst.b   (a1,d0.w)
+        beq.s   3f
+        addq.w  #1,d0
+        cmp.w   #ANN_W,d0
+        bcs.s   2b
+3:      tst.w   d0                     | sans les espaces de fin
+        beq.s   5f
+        cmp.b   #0x20,-1(a1,d0.w)
+        bne.s   4f
+        subq.w  #1,d0
+        bra.s   3b
+4:      moveq   #ANN_W,d1              | centre
+        sub.w   d0,d1
+        lsr.w   #1,d1
+        lea     V_ANNB,a0
+        adda.w  d1,a0
+        movea.l a1,a3
+        subq.w  #1,d0
+41:     move.b  (a3)+,(a0)+
+        dbra    d0,41b
+5:      lea     V_ANNB+ANN_W+(ANN_W-15)/2,a0
+        move.b  #0x7F,(a0)+
+        addq.l  #1,a0
+        lea     t_a_trk,a2
+        bsr     bcopy
+        move.w  V_PT,d4
+        addq.w  #1,d4
+        bsr     b2d
+        move.b  #0x2F,(a0)+
+        move.w  26(a1),d4
+        bsr     b2d
+        addq.l  #1,a0
+        move.b  #0x7F,(a0)+
+        clr.w   V_ANNT
+        move.w  #2,V_ANN
+        movem.l (sp)+,d0-d4/a0-a3
+        rts
+t_a_trk: .asciz "TRACK "
+| mini vumetre : pour un niveau de 0..32 px, tuile T_V0 + n (n = 0..8 px remplis) des 4 cases, celle du haut d'abord
+hud_vt:
+        .byte   0,0,0,0, 0,0,0,1, 0,0,0,2, 0,0,0,3, 0,0,0,4, 0,0,0,5, 0,0,0,6, 0,0,0,7
+        .byte   0,0,0,8, 0,0,1,8, 0,0,2,8, 0,0,3,8, 0,0,4,8, 0,0,5,8, 0,0,6,8, 0,0,7,8
+        .byte   0,0,8,8, 0,1,8,8, 0,2,8,8, 0,3,8,8, 0,4,8,8, 0,5,8,8, 0,6,8,8, 0,7,8,8
+        .byte   0,8,8,8, 1,8,8,8, 2,8,8,8, 3,8,8,8, 4,8,8,8, 5,8,8,8, 6,8,8,8, 7,8,8,8
+        .byte   8,8,8,8
+hud_grp: .byte  0,2, 3,1, 5,1          | position du petit texte & 3 = 1, 2, 3 : premiere voie, nombre de voies - 1
+        .balign 2
+th_tab: .long   hues, th_gold, th_ui, th_fire, th_ice
+
 | essai : decompte les boucles completes du texte qui ondule et bascule la phase texte <-> sphere quand le quota est
 | atteint (SC_TXT_PASSES boucles de texte, puis SC_SPH_PASSES boucles "virtuelles" pendant que la sphere est affichee :
 | V_SPOS continue d'avancer et de boucler en arriere-plan meme quand le texte n'est pas dessine, donc cet appel a lieu
@@ -1441,6 +1689,12 @@ scene_pass:
         bra.s   70f
 71:     clr.w   V_SCENE                 | sphere -> texte : la sphere se fige et se masque, elle ne tourne plus hors ecran
         bsr     sphere_hide
+        move.w  V_THEME,d0              | 2.5.37 : le texte revient avec le theme de couleurs suivant (il est hors de
+        addq.w  #1,d0                   |   l'ecran a cet instant : le changement ne se voit pas)
+        cmp.w   #TH_N,d0
+        bcs.s   72f
+        moveq   #0,d0
+72:     move.w  d0,V_THEME
         move.w  #SC_TXT_PASSES,d3       | (le texte n'a pas besoin d'etre "demasque" : cd_done reecrit sa hauteur SCB3
 70:     move.w  d3,V_SCPASS             |  en entier a chaque image des qu'il redevient actif, voir plus haut)
         rts
@@ -2001,6 +2255,35 @@ cd_fade_tab:
         .word   0x1DDB, 0x7BCC, 0x7BBB, 0x3AAB, 0x07DD, 0x46BD, 0x579B, 0x5788, 0x0768, 0x447C, 0x4457, 0x4828, 0x5324, 0x5112
         .word   0x0EEC, 0x3CDD, 0x1CCC, 0x4ABC, 0x47EE, 0x27BE, 0x08AC, 0x3889, 0x7768, 0x647D, 0x7457, 0x7928, 0x7324, 0x4113
         .word   0x0FFD, 0x3DEE, 0x1DDD, 0x4BCD, 0x08FF, 0x67CF, 0x68AD, 0x489A, 0x0879, 0x058E, 0x0568, 0x2A29, 0x2425, 0x4113
+| --- debut des tables generees par tools/gen_saver_fx.py ---
+| grand texte : degrades cycliques de 32 couleurs (theme 0 = hues, l'arc-en-ciel d'origine) ; un theme par passage
+| du texte (scene_pass)
+th_gold:                               | or / chrome
+        .word   0x2941, 0x2941, 0x2A51, 0x2B61, 0x0C81, 0x5D91, 0x5EA1, 0x5FB1
+        .word   0x5FB1, 0x4FB2, 0x7FB2, 0x6FC4, 0x5FD5, 0x5FE7, 0x4FF9, 0x7FF9
+        .word   0x6FFA, 0x7FF9, 0x4FF9, 0x5FE7, 0x4FD6, 0x6FC4, 0x7FB2, 0x4FB2
+        .word   0x5FB1, 0x5FB1, 0x5EA1, 0x5D91, 0x0C81, 0x2B61, 0x2A51, 0x2941
+th_ui:                               | couleurs de l'interface : cyan, magenta, jaune
+        .word   0x12FF, 0x52FF, 0x13EF, 0x54DF, 0x06CF, 0x28AF, 0x2A8F, 0x2C7F
+        .word   0x5D6E, 0x5E5E, 0x7F4E, 0x7F4E, 0x4F5E, 0x6F5D, 0x7F6B, 0x4F8A
+        .word   0x6F98, 0x4FB6, 0x7FC4, 0x6FD3, 0x4FE2, 0x7FE1, 0x7FE1, 0x7EE2
+        .word   0x7DE3, 0x2CE5, 0x2AE7, 0x08F9, 0x06FB, 0x44FD, 0x13FE, 0x42FF
+th_fire:                               | feu
+        .word   0x0D12, 0x0D12, 0x5D21, 0x1E31, 0x0E41, 0x5E50, 0x1F60, 0x4F70
+        .word   0x4F70, 0x6F70, 0x5F80, 0x6F91, 0x4FB2, 0x6FC3, 0x5FE3, 0x6FE4
+        .word   0x4FF4, 0x6FE4, 0x5FE3, 0x6FC3, 0x4FB2, 0x6F91, 0x5F80, 0x6F70
+        .word   0x4F70, 0x4F70, 0x1F60, 0x5E50, 0x0E41, 0x1E31, 0x5D21, 0x0D12
+th_ice:                               | glace
+        .word   0x714F, 0x515F, 0x516F, 0x327F, 0x129F, 0x32AF, 0x52CF, 0x52DF
+        .word   0x72DF, 0x33DF, 0x14EF, 0x16EF, 0x38EF, 0x1AFF, 0x1CFF, 0x3DFF
+        .word   0x7DFF, 0x3DFF, 0x1CFF, 0x1AFF, 0x38EF, 0x16EF, 0x14EF, 0x33DF
+        .word   0x72DF, 0x52DF, 0x52CF, 0x32AF, 0x129F, 0x327F, 0x516F, 0x515F
+| annonce de piste : fondu des lettres, paliers 0..16 (blanc casse, puis jaune de l'interface)
+fd_w:
+        .word   0x0000, 0x0111, 0x7111, 0x7222, 0x7333, 0x0444, 0x0555, 0x0666, 0x0777, 0x7777, 0x7888, 0x7999, 0x0AAA, 0x0BBB, 0x0CCC, 0x7CCC, 0x7DDD
+fd_y:
+        .word   0x0000, 0x0110, 0x0220, 0x2320, 0x2430, 0x3540, 0x3650, 0x3760, 0x1870, 0x5880, 0x5990, 0x5AA0, 0x4BB1, 0x4CC1, 0x6DC1, 0x6ED1, 0x6FE1
+| --- fin des tables gen_saver_fx ---
 t_sc_play: .asciz "NEO GEO JUKEBOX - ENJOY FINE MUSIC ! - NIC034 / DELTA ISLAND    "
 | texte qui ondule personnalise (constructeur, JB_STEXT_OFF) : 256 caracteres au plus + 4 espaces de separation + 0,
 | police 0x20..0x5F (le constructeur convertit) ; 0 en tete = textes d'origine ci-dessus et ci-dessous

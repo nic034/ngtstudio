@@ -1,6 +1,17 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.38 (2026-11-10)
+- Jukebox screen saver: the checkerboard is back to its fixed dark grey; the changing tint and the pulse on drum hits of
+  2.5.37 are removed (tiring for the eyes). Mini VU meter, track banner and colour themes are kept.
+
+2.5.37 (2026-11-09)
+- Jukebox screen saver, four additions (no sprite added, only palettes and the fix layer):
+  mini VU meter top left (7 voices, the counterpart of the CD); track banner (album + "TRACK nn/nn") that opens when the
+  screen saver starts and at every track change; 5 colour themes for the big wavy text (rainbow, gold, the colours of the
+  player screen, fire, ice), one per pass; the checkerboard slowly changes tint and pulses a little on drum hits.
+- Measured in MAME: worst image of the vertical blank unchanged (36 lines of 40), mean +1.2 line. Not tested on real hardware.
+
 2.5.36 (2026-11-09)
 - Toasty Delta Island: press DOWN + START (player 1) while the Toasty portrait is on screen and one of 4 Mortal Kombat 3
   sounds (your 4 files) is played at random; then the screen saver stops and the normal player screen comes back, the music

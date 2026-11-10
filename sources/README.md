@@ -85,6 +85,9 @@ Screen saver: after 5 minutes without a press, an Amiga-style demo screen: a big
 ("NEO GEO JUKEBOX - ENJOY FINE MUSIC !" while music plays, the wave swells with the music; "THANKS FOR USING THIS SOFTWARE"
 when stopped or paused) over a very faint isometric checkerboard that scrolls and ripples like water (more and faster when the music is loud), with the album,
 track, elapsed and remaining time scrolling in small yellow letters at the top and bottom. The music keeps playing.
+Since 2.5.37: a mini VU meter (7 voices) top left, opposite the spinning CD; a banner with the album and "TRACK nn/nn" that
+opens when the screen saver starts and at every track change; the wavy text changes colour theme at each pass (rainbow, gold,
+the colours of the player screen, fire, ice).
 Any press wakes it up and does nothing else.
 
 Rotating objects: a game box, a Neo Geo console and the Delta Island logo and triangle rotate and drift

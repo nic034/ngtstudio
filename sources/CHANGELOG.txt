@@ -1,3 +1,54 @@
+2.5.38 2026-11-10  Jukebox screen saver: the checkerboard is back to its fixed dark grey (0x0222, as in 2.5.36).
+                   REMOVED the slow tint drift and the brightening on drum hits added in 2.5.37: tiring for the eyes.
+                        The three other 2.5.37 additions stay (mini VU meter, track banner, 5 colour themes)
+                   core.S: hud_pal only fades the banner letters; fl_tab removed (tools/gen_saver_fx.py).
+                        68000 program: 27632 -> 27080 bytes
+                   Measured in MAME 0.264 (real BIOS, Art of Fighting 2 album).  Vertical blank, text scene, 5 min:
+                        mean 29.1 lines (2.5.36: 28.1, 2.5.37: 29.3), worst image 36 of 40 as before
+                   Tests: saver_hud.lua now checks that the checkerboard colour never changes: 19/19 (MVS euro).
+                        Existing scripts against 2.5.36, same album: same output to the character for saver_test
+                        (12/12), saver_perline (92 sprites at worst), saver_fuzz, saver_entry_press, saver_cover,
+                        saver_delay, saver_anim, album_wrap, toasty_combo, toasty_sfx, toasty_wake, toasty_stress.
+                        Not identical, by a few images of main-loop timing: box_mix 94 -> 95 sprites at worst (no
+                        sprite added; 2.5.36 already reaches 95 with other start times), saver_endurance (Z80 buffer
+                        minimum 10 -> 6 bytes at a track start, never empty), fuzz and random_mode (no reset, no
+                        silent Z80, same tracks).  Other BIOSes and AES not run again for this version (they passed
+                        on 2.5.37).  NOT tested on real hardware
+2.5.37 2026-11-09  Jukebox screen saver: four additions, palettes and fix layer only (not one sprite more):
+                   NEW  mini VU meter, top left, the counterpart of the spinning CD (7 voices, 4 cells high, x 16..71,
+                        y 24..55): same bar tiles and colours as the VU meters of the player screen (at the 50 % of
+                        the screen-saver palettes), on the fix layer, in front of the sprites
+                   NEW  track banner: when the screen saver starts while music plays, and at every track change during
+                        the screen saver, a 2-line banner (album title, then "TRACK nn/nn" between two notes) opens
+                        from its centre (11 images), its letters fade in, stay, fade out, and it closes again (4.4 s
+                        in all).  Not shown when stopped or paused.  Fix layer, columns 10..31, rows 6..7
+                   NEW  big wavy text: 5 colour themes instead of the rainbow alone, the next one each time the text
+                        comes back after the sphere: rainbow (as before), gold, the cyan / magenta / yellow of the
+                        player screen, fire, ice.  The switch happens while the text is off screen
+                   NEW  checkerboard: its grey now drifts slowly (grey, night blue, violet, blue-green: 35 s per
+                        cycle) and brightens a little on drum hits (the flash of the big text); it stays very dark
+                        (components 2..7 of 31 at rest, 11 at most)
+                   core.S: hud_pal (palettes, with the others at the start of the vertical blank), hud_fix (fix layer:
+                        banner and VU meter), ann_build (banner text, main loop), th_tab; RAM+1760..1809 (V_THEME, V_ANN,
+                        V_ANNT, V_ANNB); tables by tools/gen_saver_fx.py.  68000 program: 25858 -> 27632 bytes
+                   Measured in MAME 0.264 (real BIOS, Art of Fighting 2 album), before -> after.  Vertical blank,
+                        text scene, 5 min: mean 28.1 -> 29.3 lines, worst image 36 -> 36 lines of 40 (the VU meter is
+                        never redrawn in the heaviest image, the one where the small text is rewritten: each voice
+                        is redrawn 15 times a second); the 7 images above 40 lines (big text rewritten when the
+                        track ends) are the same.  Sphere scene: still far above the vertical blank, as before
+                        (145 -> 147 lines; known since 2.5.26, not fixed here).  Sprites per line: nothing added
+                        (89 to 95 at worst depending on the moment the screen saver starts, same values on 2.5.36)
+                   Tests: mame_tests/saver_hud.lua (new: banner states and text, VU cells, themes in order, floor
+                        colours, palettes restored on wake, no banner when paused): 19/19 on MVS (euro, us, japan,
+                        UniBIOS 3.3) and AES (asia, japan).  Existing scripts, 2.5.36 against 2.5.37, same album:
+                        saver_test (12/12; AES 11/11), saver_fuzz, saver_entry_press, saver_cover, saver_delay,
+                        saver_anim, album_wrap, box_mix, toasty_combo (22 cases), toasty_sfx, toasty_wake: same
+                        output to the character.  Not identical, by a few images of main-loop timing (the music
+                        does not unfold on exactly the same images): saver_perline 92 -> 93 sprites at worst,
+                        toasty_stress 93 -> 94, fuzz and random_mode (no reset, no silent Z80, same tracks).
+                        Z80 buffer over 12 min of screen saver: mean 984 / 919 bytes (text / sphere) on both,
+                        never empty.  The calm theme does not link since 2.5.36 (STCURNT missing in ui3_calm.S):
+                        not fixed here.  NOT tested on real hardware
 2.5.36 2026-11-09  Jukebox screen saver (Toasty Delta Island):
                    NEW  DOWN + START (player 1) pressed together WHILE the Toasty portrait is on screen: one of 4
                         Mortal Kombat 3 sounds (files mk3-09440, 09160, 09150, 09155 supplied by Nicolas, 2.0 to 2.7 s)

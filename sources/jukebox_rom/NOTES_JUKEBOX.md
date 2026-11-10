@@ -528,3 +528,76 @@ ci-dessous (amplitude minimale, espacement des objets).
   10, Bas seul, Start seul, Bas relâché avant Start, A, sans Toasty, Toasty fini, écran de lecture, 12 tirages : 1x5, 2x5, 3x2, 4x3) ;
   `toasty_combo_audio.lua` (`-wavwrite`, musique arrêtée, avec - sans appui) : les 4 sons joués en entier, corrélation 0,996..0,999
   avec leur décodage ADPCM-A, rien après la fin. Non testé : matériel réel, joueur 2 (non géré), vrai hasard sur console.
+
+## Économiseur 2.5.37 : mini vumètre, annonce de piste, thèmes du grand texte, teinte du damier (retirée en 2.5.38)
+
+Quatre ajouts faits **sans aucun sprite** (palettes et couche fix, qui passe devant les sprites) : la limite de 96 sprites
+par ligne n'est pas concernée. Tout est dans `core.S` ; tables de couleurs par `tools/gen_saver_fx.py` (entre repères, avant `t_sc_play`).
+
+- **Mini vumètre** (`hud_fix` / `hud_vu`) : 7 voies, colonnes fix 2..8, rangées 5..8 (x 16..71, y 24..55 : le pendant du CD,
+  même hauteur, même marge de 16 px). Tuiles `T_V0..T_V8` et couleurs `vupal` de l'interface (à 50 %, comme toutes les
+  palettes 0..15 pendant l'économiseur ; le fond des cases est la couleur 2, opaque : petit panneau sombre). Niveau
+  `V_LVL` (0..128) -> 0..32 px par la table `hud_vt`. Un groupe de voies par image (0-2, 3-4, 5-6), **rien dans l'image
+  où le petit texte se réécrit** (`V_IPOS & 3` = 0, la plus chargée) : chaque voie est redessinée 15 fois par seconde.
+- **Annonce de piste** : `V_ANN` (RAM+1762) 0 rien, 1 demandée, 2 le bandeau s'ouvre, 4 affichée, 5 il se referme ;
+  `V_ANNT` (+1764) images écoulées dans l'état ; `V_ANNB` (+1766) 2 x 22 caractères (0x7F = `T_NOTE`).
+  Demandée par `saver_on` (lecture en cours, pas en pause) et par `toasty_trk` (changement de piste, économiseur
+  affiché ; le crochet existait déjà dans `play`). `ann_build` (boucle principale, depuis `saver_info`) centre le titre
+  (22 caractères au plus, espaces de fin retirés) et « ♪ TRACK nn/nn ♪ », puis passe à 2 **en dernier** : le VBlank ne
+  lit `V_ANNB` qu'à partir de là. Colonnes 10..31, rangées 6 (palette 0) et 7 (palette 8). Ouverture du centre vers
+  les bords, une colonne de chaque côté par image (4 cases, 11 images) ; fondu des lettres par `hud_pal` (palettes 0
+  et 8, couleur 1, tables `fd_w` / `fd_y`, palier 0 = couleur du fond lue dans la palette) : 16 images, tenue, 16
+  images (`ANN_END` = 240) ; fermeture des bords vers le centre (`T_CLEAR`). 262 images, 4,4 s. Une nouvelle demande
+  pendant une annonce la reprend depuis l'ouverture. Au réveil : `cls` + `pal_norm`, rien à défaire.
+- **Thèmes du grand texte** : `V_THEME` (RAM+1760, 0..`TH_N`-1 = 5), `th_tab` -> `hues` (arc-en-ciel d'origine, propre
+  à chaque thème d'interface), `th_gold`, `th_ui` (cyan / magenta / jaune), `th_fire`, `th_ice` : dégradés cycliques de
+  32 couleurs lus exactement comme `hues`. Remis à 0 par `saver_on` ; suivant dans `scene_pass` quand la sphère rend
+  la main au texte (texte hors de l'écran : changement invisible). Coût nul (une table au lieu d'une autre).
+- **Teinte du damier — RETIRÉE en 2.5.38, voir plus bas** (`hud_pal`) : palette 17 couleur 1, `fl_tab` = 4 éclats x 64 pas ; pas = `V_VBL` / 32 (cycle de
+  35 s : gris, bleu nuit, violet, bleu-vert), éclat = (`V_FLASH` + 1) / 2 (le flash des coups de batterie). Composantes
+  2..7 sur 31 au repos, 11 au plus. Écrite avec les autres palettes, au début du retour de trame.
+- `hud_pal` est appelée juste avant la palette du grand texte ; `hud_fix` à `cd_done`, avant le texte ou la sphère
+  (donc dans le retour de trame dans les deux scènes).
+- **Mesuré (MAME 0.264, vrai BIOS euro, album Art of Fighting 2, ROM instrumentée, 5 min, scène texte)**, 2.5.36 ->
+  2.5.37 : moyenne 28,06 -> 29,25 lignes ; pire image hors réécriture du grand texte **36 -> 36** (image
+  `V_IPOS & 3` = 0 : 32,3 -> 32,8 en moyenne ; les trois autres : 33 -> 34 au pire) ; 7 images au-delà de 40 lignes
+  dans les deux cas (réécriture des 81 tranches quand la lecture s'arrête ou reprend, 66..72 lignes : antérieur).
+  Première version essayée (4 voies aux images paires, 3 aux impaires) : 38 lignes au pire, abandonnée.
+  Scène sphère : 145 -> 147 lignes, toujours très au-delà du retour de trame (problème antérieur, non corrigé).
+- **Sprites par ligne** : rien d'ajouté. À noter : le pire cas dépend de l'instant où l'économiseur démarre
+  (`box_mix.lua` lancé à 4 instants : 94 / 93 / 95 / 89 sur la 2.5.36, 95 / 93 / 95 / 89 sur la 2.5.37 ; l'écart du
+  premier vient du déroulé de la musique, décalé de quelques images, pas d'un sprite en plus). 95 est donc déjà
+  atteint par la 2.5.36 : une seule unité de marge sous 96.
+- **Tests** : `mame_tests/saver_hud.lua` (états et texte de l'annonce à l'entrée et au changement de piste, lettres au
+  niveau plein, cases du bandeau transparentes après fermeture, cases du vumètre, thèmes 0,1,2,3,4,0, teintes du damier
+  sombres, palettes 0 / 8 rétablies au réveil, pas d'annonce en pause) : 19/19 sur MVS (euro, us, japan, UniBIOS 3.3)
+  et AES (asia, japan ; l'AES démarre plus vite : le test attend le tour des thèmes au lieu d'une image fixe).
+  Scripts existants, 2.5.36 contre 2.5.37, même album : sortie identique au caractère près pour `saver_test`,
+  `saver_fuzz`, `saver_entry_press`, `saver_cover`, `saver_delay`, `saver_anim`, `album_wrap`, `box_mix`,
+  `toasty_combo`, `toasty_sfx`, `toasty_wake`. Différents de quelques images (la boucle principale fait un test de
+  plus par tour : la musique ne se déroule pas exactement sur les mêmes images) : `saver_perline` 92 -> 93,
+  `toasty_stress` 93 -> 94, `saver_endurance` (minimum du tampon Z80 10 -> 7 octets, au démarrage d'une piste),
+  `fuzz`, `random_mode`. Tampon Z80 sur 12 min d'économiseur (`zbuf`, non versé au dépôt) : moyenne 984 / 919 octets
+  (texte / sphère) pour les deux versions, jamais vide, 15 -> 16 et 37 -> 39 images sous 64 octets.
+  `toasty_chars.lua` n'est pas probant avec un album aux pistes longues (il attend un changement de piste en moins de
+  4000 images) : mêmes anomalies sur la 2.5.36.
+- **Non testé** : matériel réel (Darksoft, NeoSD), thème calme.
+- **Trouvé en passant, non corrigé** : le thème calme ne se lie plus depuis la 2.5.36 (`STCURNT` n'est pas défini
+  dans `theme_calm/ui3_calm.S`, utilisé par `toasty_keys`). Avec ce symbole, il s'assemble, ajouts 2.5.37 compris.
+
+## Économiseur 2.5.38 : teinte du damier retirée
+
+Retour de Nicolas sur la 2.5.37 : le sol qui change de teinte et pulse sur la batterie est gênant pour les yeux.
+Retiré entièrement : le damier garde le gris fixe `0x0222` posé par `saver_on` (palette 17, couleur 1), comme en 2.5.36.
+`hud_pal` ne fait plus que le fondu des lettres de l'annonce ; `fl_tab` n'existe plus (`gen_saver_fx.py` ne la génère
+plus). Mini vumètre, annonce de piste et thèmes du grand texte inchangés. Programme 68000 : 27632 -> 27080 octets.
+
+- **Mesuré** (mêmes conditions que la 2.5.37) : VBlank scène texte, moyenne 29,07 lignes (2.5.36 : 28,06 ; 2.5.37 :
+  29,25), pire image hors réécriture 36 sur 40, 7 images au-delà de 40 (réécriture du grand texte, antérieur).
+- **Tests** : `saver_hud.lua` vérifie maintenant que `0x400222` vaut toujours `0x0222` : 19/19 (MVS euro). Contre la
+  2.5.36, sortie identique pour `saver_test`, `saver_perline` (92), `saver_fuzz`, `saver_entry_press`, `saver_cover`,
+  `saver_delay`, `saver_anim`, `album_wrap`, `toasty_combo`, `toasty_sfx`, `toasty_wake`, `toasty_stress`. Différents
+  de quelques images de boucle principale : `box_mix` 94 -> 95 (aucun sprite ajouté ; la 2.5.36 atteint déjà 95 avec
+  d'autres instants de départ), `saver_endurance` (minimum du tampon Z80 10 -> 6 octets, jamais vide), `fuzz`,
+  `random_mode`. Autres BIOS et AES non rejoués sur cette version. **Non testé sur matériel réel.**
+- Leçon pour la suite : pas d'animation de couleur sur les grandes surfaces du fond (le damier couvre tout l'écran).
