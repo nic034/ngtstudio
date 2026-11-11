@@ -69,7 +69,8 @@ et `JB_TILES_B64`.
   - `$144` = offset de l'index ;
   - `$148` = base des offsets de flux ;
   - `$14C` = nombre de banques P2 ;
-  - `$14E` = occupation globale en %, affichée en haut à droite.
+  - `$14E` = occupation en %, affichée en haut à droite (`ROM nn%`) : la mémoire la plus pleine (P-ROM, V-ROM, M1) rapportée à ce que
+    le constructeur autorise (limite moins 5 %), 100 % = bord du refus (2.5.40 ; avant : (P + V utilisées) / (P + V limites)).
 - **Index NGJB** :
   - en-tête : `NGJB`, u16 nombre de jeux, u16 nombre de pistes, u32 offset de la table des jeux, u32 offset de la table des pistes ;
   - entrée jeu (32 octets) : titre (24 octets), u16 première piste, u16 nombre de pistes, base V-ROM ;
@@ -627,3 +628,13 @@ Retour de Nicolas : le vumètre de la 2.5.37 est trop gros et son fond opaque g�
   `toasty_sfx`, `toasty_wake`, `random_mode` ; à quelques images de boucle principale près : `saver_perline` 92 -> 93,
   `box_mix` 95 -> 94, `toasty_stress` (93, autre ligne), `saver_endurance` (tampon Z80 min 6 -> 9 octets), `fuzz`
   (aucun reset, Z80 jamais muet). **Non testé sur matériel réel.**
+
+## Occupation affichée (2.5.40)
+
+- Avant : `100 x (P-ROM + V-ROM utilisées) / (P-ROM + V-ROM limites)`. Vérifié sur 1, 2, 3, 4, 6, 9 albums (copies d'Art of Fighting 2) et
+  une sélection partielle : le chiffre collait aux octets réels des ROM construites (écart d'arrondi, ~64 octets de marqueurs de
+  banque comptés en trop) et l'écran MAME affichait la même valeur (09 %, 35 %, 79 %).
+- Défaut : la P-ROM est presque vide (flux compressés), donc le chiffre cachait la V-ROM, le vrai goulot : 9 albums = 79 % alors que la
+  V-ROM était à 95 % du permis ; 10 albums refusés alors que l'écran aurait dit 88 %.
+- Maintenant : `max(used / allowed)` sur P-ROM, V-ROM, M1 (mêmes pourcentages que `capacity.txt`). 100 % = au bord du refus.
+  Le programme 68000 ne change pas (le mot `$14E` est une donnée écrite par le constructeur ; la branche d'affichage 100..199 existait déjà).

@@ -1,3 +1,13 @@
+2.5.40 2026-11-11  Jukebox screen: the "ROM nn%" at the top right now shows the fullest memory.
+                   CHANGED it used to be (P-ROM + V-ROM used) / (P-ROM + V-ROM limits).  The P-ROM is nearly empty (the
+                        compressed streams are small) so the figure hid the real bottleneck, the V-ROM: 9 albums showed
+                        79 % while the V-ROM was at 95 % of what the builder allows, and 10 albums were refused although
+                        the screen would have said 88 %.  Now: the highest of P-ROM, V-ROM and M1, each as used / allowed
+                        (limit minus the 5 % margin, the same percentages as the capacity report): 100 % = the edge of
+                        the refusal.  The status line of the Cartridge tab says so.  The 68000 program is unchanged
+                        (only the word at $14E written by the builder changes).
+                   CHECKED with 1, 2, 3, 4, 6 and 9 albums and a partial selection: the old figure matched the bytes of
+                        the built ROM; the new one matches the capacity report and the MAME screen.
 2.5.39 2026-11-11  Jukebox screen saver: smaller, see-through mini VU meter, mirrored on the spinning CD.
                    CHANGED the mini VU meter is now a 32 x 32 px block at x 16..47, y 24..55: the exact mirror of the
                         CD (x 272..303, same height, same 16 px margin).  It was 56 px wide with an opaque dark panel

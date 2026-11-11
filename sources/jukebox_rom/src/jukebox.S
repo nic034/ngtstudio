@@ -35,7 +35,7 @@
         .long   0                      | 0x144 : offset de l'index dans la P-ROM (rempli par le constructeur)
         .long   0                      | 0x148 : base des offsets de flux (0 : offsets absolus)
         .word   0                      | 0x14C : nombre de banques P2 (chacune commence par un marqueur de 16 octets)
-        .word   0                      | 0x14E : occupation globale de la ROM en % (calculee par le constructeur)
+        .word   0                      | 0x14E : occupation de la ROM en % : memoire la plus pleine / limite autorisee (constructeur, 2.5.40)
         .org    0x182
         .long   secblk, 0, 1, 0
         .org    0x200

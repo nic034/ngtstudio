@@ -1,6 +1,12 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.40 (2026-11-11)
+- Jukebox screen: the "ROM nn%" at the top right now shows the fullest memory (P-ROM, V-ROM or M1), as a percentage of
+  what the builder allows (limit minus the 5 % margin): 100 % = the edge of the refusal. It used to be (P-ROM + V-ROM)
+  / (P-ROM + V-ROM limits), which hid the V-ROM, the real bottleneck (9 albums showed 79 % with the V-ROM at 95 %).
+  The 68000 program is unchanged. The status line of the Cartridge tab says what the figure means.
+
 2.5.39 (2026-11-11)
 - Jukebox screen saver: the mini VU meter is smaller (32 x 32 px, the mirror of the spinning CD on the other side) and
   has no background any more: only thin bars, each voice in its colour. The track banner is centred again.

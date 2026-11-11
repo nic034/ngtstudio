@@ -92,9 +92,19 @@ import numpy as np  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(sys.executable if FROZEN else __file__))   # exe : dossier de l'exe
 
 # ---- Version (MAJOR.MINOR.PATCH): bump on every delivery and add a line to CHANGELOG.
-VERSION = "2.5.39"
-BUILD_DATE = "2026-11-09"
+VERSION = "2.5.40"
+BUILD_DATE = "2026-11-11"
 CHANGELOG = """\
+2.5.40 2026-11-11  Jukebox screen: the "ROM nn%" at the top right now shows the fullest memory.
+                   CHANGED it used to be (P-ROM + V-ROM used) / (P-ROM + V-ROM limits).  The P-ROM is nearly empty (the
+                        compressed streams are small) so the figure hid the real bottleneck, the V-ROM: 9 albums showed
+                        79 % while the V-ROM was at 95 % of what the builder allows, and 10 albums were refused although
+                        the screen would have said 88 %.  Now: the highest of P-ROM, V-ROM and M1, each as used / allowed
+                        (limit minus the 5 % margin, the same percentages as the capacity report): 100 % = the edge of
+                        the refusal.  The status line of the Cartridge tab says so.  The 68000 program is unchanged
+                        (only the word at $14E written by the builder changes).
+                   CHECKED with 1, 2, 3, 4, 6 and 9 albums and a partial selection: the old figure matched the bytes of
+                        the built ROM; the new one matches the capacity report and the MAME screen.
 2.5.39 2026-11-11  Jukebox screen saver: smaller, see-through mini VU meter, mirrored on the spinning CD.
                    CHANGED the mini VU meter is now a 32 x 32 px block at x 16..47, y 24..55: the exact mirror of the
                         CD (x 272..303, same height, same 16 px margin).  It was 56 px wide with an opaque dark panel
@@ -6516,9 +6526,10 @@ def bios_help(tried, last_rom=None):
 
 
 def jb_occupancy(ev):
-    """% affiché par le jukebox : (P-ROM + V-ROM utilisées) / (P-ROM + V-ROM du format, standard ou étendu)."""
-    pv = [r for r in ev["rows"] if r["name"].startswith(("P-ROM", "V-ROM"))]
-    return min(199, int(round(100 * sum(r["used"] for r in pv) / max(sum(r["limit"] for r in pv), 1))))
+    """% affiché par le jukebox (2.5.40) : la mémoire la plus pleine parmi P-ROM, V-ROM et M1, chacune rapportée à ce que
+    le constructeur autorise (limite moins la marge de 5 %, comme dans le rapport de capacité) : 100 % = au bord du refus.
+    Avant, (P-ROM + V-ROM utilisées) / (P-ROM + V-ROM limites) : la P-ROM, presque vide, masquait la V-ROM."""
+    return min(199, int(round(100 * max(r["used"] / max(r["allowed"], 1) for r in ev["rows"]))))
 
 
 def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, boxes=None, toasty=False,
@@ -6577,8 +6588,8 @@ def build_cart(pk, profile, bios_zip, outdir, name="ngjb", formats=JB_FORMATS, b
     img, banks = layout_prom(bytes(code), pk)
     if len(img) > JB_PROFILES[profile]["prom"]:
         raise ValueError("P-ROM image larger than the profile allows")
-    # occupation affichée en haut à droite du jukebox : (P-ROM + V-ROM utilisées) / (P-ROM + V-ROM du format choisi,
-    # standard 5 + 16 Mo ou étendu 9 + 16 Mo) ; le M1 (driver fixe de 1 Ko) n'entre pas dans le calcul
+    # occupation affichée en haut à droite du jukebox : la mémoire la plus pleine (P-ROM, V-ROM, M1) rapportée à ce que
+    # le constructeur autorise (jb_occupancy, 2.5.40) ; 100 % = au bord du refus
     img = bytearray(img)
     struct.pack_into(">H", img, 0x14E, jb_occupancy(ev))
     struct.pack_into(">H", img, JB_BOXDATA_OFF, len(box))    # boxdata (core.S) : planches, puis pour chacune (48 octets)
@@ -9201,7 +9212,7 @@ class CartTab:
                 tail = " Does not fit (V-ROM, 16 MB in both formats): untick tracks or remove a game."
             else:
                 tail = " Does not fit (" + ", ".join(over) + "): untick tracks or remove a game."
-        self.v_info.set(f"{len(pk['games'])} game(s), {nt} track(s).{comp}{tail} Jukebox screen: ROM {jb_occupancy(ev)} %.")
+        self.v_info.set(f"{len(pk['games'])} game(s), {nt} track(s).{comp}{tail} Jukebox screen: ROM {jb_occupancy(ev)} % (fullest memory, 100 % = build limit).")
 
     def poll(self):
         try:
