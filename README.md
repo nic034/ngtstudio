@@ -68,6 +68,7 @@ carry your favourite music on a real Neo Geo.
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
 - **2.5.29**: the Toasty check box is now called "Toasty Delta Island".
+- **2.5.39**: screen saver: smaller mini VU meter without background (thin bars only), mirrored on the spinning CD; track banner centred again.
 - **2.5.38**: screen saver: the checkerboard is back to its fixed dark grey (the changing tint and the pulse on drum hits of 2.5.37 were tiring for the eyes); the other 2.5.37 additions stay.
 - **2.5.37**: screen saver: mini VU meter, track banner at each track change, 5 colour themes for the wavy text, checkerboard that changes tint and pulses on drum hits (no sprite added).
 - **2.5.36**: DOWN + START while the Toasty portrait is on screen plays one of 4 Mortal Kombat 3 sounds at random, then the screen saver stops (sounds © Midway / Warner Bros., not MIT: see `NOTICE.md`).

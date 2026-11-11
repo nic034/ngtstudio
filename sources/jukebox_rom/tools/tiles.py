@@ -93,6 +93,13 @@ for k in range(3):
 T["clear"] = (BASE + len(T), [[0] * 8 for _ in range(8)])
 # mode aleatoire (2.5.19) : deux fleches croisees
 add("rand", from_art(["      X ", "XXX  XXX", "   X  X ", "    X   ", "    X   ", "   X  X ", "XXX  XXX", "      X "], {"X": 1}))
+# mini vumetre de l'economiseur (2.5.39) : DEUX voies par case, fond TRANSPARENT (couleur 0, pas de add()) ;
+# tuile m00 + 9 x a + b : barre de gauche (x 1..3, couleur 1) remplie de a px depuis le bas, barre de droite (x 5..7,
+# couleur 5) de b px ; 81 tuiles.  La couleur 5 de la palette de la case = couleur 1 de la voie de droite (hud_vpal).
+for a in range(9):
+    for b in range(9):
+        T[f"m{a}{b}"] = (BASE + len(T), [[(1 if 1 <= x <= 3 and 7 - y < a else 5 if 5 <= x <= 7 and 7 - y < b else 0)
+                                           for x in range(8)] for y in range(8)])
 
 def tile_px(n):
     if n >= BASE:

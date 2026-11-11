@@ -1,6 +1,10 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.39 (2026-11-11)
+- Jukebox screen saver: the mini VU meter is smaller (32 x 32 px, the mirror of the spinning CD on the other side) and
+  has no background any more: only thin bars, each voice in its colour. The track banner is centred again.
+
 2.5.38 (2026-11-10)
 - Jukebox screen saver: the checkerboard is back to its fixed dark grey; the changing tint and the pulse on drum hits of
   2.5.37 are removed (tiring for the eyes). Mini VU meter, track banner and colour themes are kept.

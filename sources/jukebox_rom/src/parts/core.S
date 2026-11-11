@@ -341,11 +341,11 @@ bc_end: move.w  #0xFFFF,V_BANK         | force la reselection au premier acces
         .equ    V_ANNB,  RAM+1766       | annonce : 2 rangees de ANN_W caracteres (0x7F = note de musique)
         .equ    TH_N,    5              | themes du grand texte
         .equ    ANN_W,   22             | annonce : largeur (cases), centree entre le vumetre et le CD
-        .equ    ANN_COL, 10             | annonce : colonnes 10..31 (x 80..255), une case d'ecart avec le vumetre
+        .equ    ANN_COL, 9              | annonce : colonnes 9..30 (x 72..247), centree sur l'ecran (2.5.39 ; 10 en 2.5.37)
         .equ    ANN_ROW, 6              | annonce : rangees 6 (titre) et 7 (piste) de la couche fix = y 32..47
         .equ    ANN_END, 240            | annonce : duree (images) : fondu 16 + tenue + fondu 16
-        .equ    HUD_VCOL, 2             | mini vumetre : 7 colonnes 2..8 (x 16..71, marge de 16 px comme le CD a droite)
-        .equ    HUD_VROW, 5             | mini vumetre : 4 rangees 5..8 (y 24..55, la hauteur du CD)
+        .equ    HUD_VCOL, 2             | mini vumetre : 4 colonnes 2..5 (x 16..47) et 4 rangees 5..8 (y 24..55) : le miroir
+        .equ    HUD_VROW, 5             |   exact du CD (x 272..303, y 24..55, marge de 16 px) ; 2 voies par case (2.5.39)
         .equ    V_IPOS,  RAM+260        | position du petit texte (pixels)
         .equ    V_ILEN,  RAM+262        | longueur du petit texte (caracteres)
         .equ    V_INEW,  RAM+264        | 1 = reconstruire le petit texte en fin d'image
@@ -601,6 +601,7 @@ pal_norm:
         bra     pal_copy
 pal_saver:
         bsr     pal_copy               | palettes a 50 % (calculees par saver_on)
+        bsr     hud_vpal               | 2.5.39 : couleur de la voie de droite des cases du mini vumetre
         move.w  #0x0222,0x400222       | palette 17, couleur 1 : losanges gris tres sombre (~13 %) ; les autres sont transparents
         lea     boxdata+8,a0           | palettes 19..24 : les 6 planches au plus (ecrites par le constructeur ; zeros
         lea     0x400260,a1            |   pour une planche absente, palette jamais utilisee)
@@ -1499,9 +1500,10 @@ hud_pal:
 | hud_fix : appelee par saver_scroll apres le CD, avant le texte ou la sphere (a6 = LSPC) : couche fix.
 |   - annonce : le bandeau (2 rangees de ANN_W cases) s'ouvre du centre vers les bords (V_ANN = 2 : une colonne de
 |     chaque cote par image, 4 cases ; 11 images) et se referme des bords vers le centre (5 : cases transparentes) ;
-|   - mini vumetre : un groupe de voies par image (0-2, 3-4, 5-6), rien dans l'image la plus chargee (celle ou le
-|     petit texte se reecrit) : chaque voie est redessinee une image sur 4 (15 fois par seconde), 4 cases par voie,
-|     tuiles et couleurs des vumetres de l'interface (vupal ; palettes a 50 %).
+|   - mini vumetre (2.5.39) : 4 x 4 cases, le miroir du CD ; deux voies par case (barres de 3 px, fond transparent,
+|     tuiles m00..m88), couleur de chaque voie = celle des vumetres de l'interface (vupal, palettes a 50 % ; voie de
+|     droite en couleur 5, posee par hud_vpal).  Un groupe de cases par image (0, 1, 2-3), rien dans l'image la plus
+|     chargee (celle ou le petit texte se reecrit) : chaque voie est redessinee une image sur 4 (15 fois par seconde).
 | Modifie d0-d3/d5/d7, a0-a3 ; laisse l'increment VRAM a 1.
 hud_fix:
         move.w  #1,4(a6)               | une colonne a la fois : case suivante vers le bas
@@ -1549,10 +1551,10 @@ hud_vu: lea     V_LVL,a0
         lea     hud_vt,a2
         move.w  V_IPOS,d0              | jamais dans l'image ou le petit texte se reecrit (position & 3 = 0, la plus
         and.w   #3,d0                  |   chargee : 36 lignes au pire mesurees, 33 pour les trois autres) ; sinon un
-        beq.s   9f                     |   groupe de voies par image : 0-2, 3-4, 5-6
+        beq     9f                     |   groupe de cases par image : case 0 (voies 1-2), case 1 (3-4), cases 2-3 (5-7)
         add.w   d0,d0
         lea     hud_grp-2,a3
-        moveq   #0,d5                  | premiere voie, nombre de voies - 1
+        moveq   #0,d5                  | premiere case, nombre de cases - 1
         move.b  (a3,d0.w),d5
         moveq   #0,d7
         move.b  1(a3,d0.w),d7
@@ -1560,36 +1562,62 @@ hud_vu: lea     V_LVL,a0
         lsl.w   #5,d0
         add.w   #0x7000+HUD_VCOL*32+HUD_VROW,d0
         move.w  d0,(a6)
+        move.w  d5,d0                  | voie de gauche = 2 x case
+        add.w   d0,d0
         moveq   #0,d1                  | niveau 0..128 -> 0..32 px -> 4 octets de hud_vt (case du haut d'abord)
-        move.b  (a0,d5.w),d1
+        move.b  (a0,d0.w),d1
         cmp.w   #128,d1
         bls.s   2f
         move.w  #128,d1
 2:      and.w   #0xFC,d1
-        lea     (a2,d1.w),a3
-        move.w  d5,d0
-        add.w   d0,d0
-        move.w  (a1,d0.w),d2           | couleur de la voie
-        add.w   #T_V0,d2
+        lea     (a2,d1.w),a3           | a3 : barre de gauche
+        moveq   #0,d3                  | d3 : barre de droite (decalage dans hud_vt ; 0 = vide, pour la 7e voie seule)
+        cmp.w   #6,d0
+        bcc.s   3f
+        move.b  1(a0,d0.w),d3
+        cmp.w   #128,d3
+        bls.s   21f
+        move.w  #128,d3
+21:     and.w   #0xFC,d3
+3:      add.w   d0,d0
+        move.w  (a1,d0.w),d2           | palette de la voie de gauche (couleur 5 = celle de la voie de droite)
+        add.w   #T_M00,d2
+        .rept   4                      | 4 cases vers le bas : tuile m00 + 9 x gauche + droite
         moveq   #0,d0
         move.b  (a3)+,d0
+        move.w  d0,d1
+        lsl.w   #3,d1
+        add.w   d1,d0
+        moveq   #0,d1
+        move.b  (a2,d3.w),d1
+        addq.w  #1,d3
+        add.w   d1,d0
         add.w   d2,d0
         move.w  d0,2(a6)
-        moveq   #0,d0
-        move.b  (a3)+,d0
-        add.w   d2,d0
-        move.w  d0,2(a6)
-        moveq   #0,d0
-        move.b  (a3)+,d0
-        add.w   d2,d0
-        move.w  d0,2(a6)
-        moveq   #0,d0
-        move.b  (a3)+,d0
-        add.w   d2,d0
-        move.w  d0,2(a6)
+        .endr
         addq.w  #1,d5
         dbra    d7,1b
 9:      rts
+| couleur 5 des palettes des cases 0..2 du mini vumetre = couleur 1 (a 50 %, V_PALB) de la palette de leur voie de
+| droite ; appelee par pal_saver (VBlank, une fois a l'entree).  Les couleurs 5 ne servent a rien d'autre (pal_copy ne
+| pose que 0..4).  Modifie d0-d1, a0-a2.
+hud_vpal:
+        lea     vupal,a0
+        moveq   #2,d1
+1:      move.w  (a0)+,d0               | palette de la case : PALn = n << 12
+        rol.w   #4,d0
+        and.w   #15,d0
+        lsl.w   #5,d0
+        lea     0x40000A,a1
+        adda.w  d0,a1
+        move.w  (a0)+,d0               | palette de la voie de droite
+        rol.w   #4,d0
+        and.w   #15,d0
+        mulu    #10,d0
+        lea     V_PALB+2,a2
+        move.w  (a2,d0.w),(a1)
+        dbra    d1,1b
+        rts
 | colonne d0 (0..ANN_W-1) du bandeau : case du titre (palette 0) puis case de la piste (palette 8) ; a0 = V_ANNB.
 | Modifie d1.
 ann_col:
@@ -1661,14 +1689,14 @@ ann_build:
         movem.l (sp)+,d0-d4/a0-a3
         rts
 t_a_trk: .asciz "TRACK "
-| mini vumetre : pour un niveau de 0..32 px, tuile T_V0 + n (n = 0..8 px remplis) des 4 cases, celle du haut d'abord
+| mini vumetre : pour un niveau de 0..32 px, remplissage n (0..8 px) de chacune des 4 cases, celle du haut d'abord
 hud_vt:
         .byte   0,0,0,0, 0,0,0,1, 0,0,0,2, 0,0,0,3, 0,0,0,4, 0,0,0,5, 0,0,0,6, 0,0,0,7
         .byte   0,0,0,8, 0,0,1,8, 0,0,2,8, 0,0,3,8, 0,0,4,8, 0,0,5,8, 0,0,6,8, 0,0,7,8
         .byte   0,0,8,8, 0,1,8,8, 0,2,8,8, 0,3,8,8, 0,4,8,8, 0,5,8,8, 0,6,8,8, 0,7,8,8
         .byte   0,8,8,8, 1,8,8,8, 2,8,8,8, 3,8,8,8, 4,8,8,8, 5,8,8,8, 6,8,8,8, 7,8,8,8
         .byte   8,8,8,8
-hud_grp: .byte  0,2, 3,1, 5,1          | position du petit texte & 3 = 1, 2, 3 : premiere voie, nombre de voies - 1
+hud_grp: .byte  0,0, 1,0, 2,1          | position du petit texte & 3 = 1, 2, 3 : premiere case, nombre de cases - 1
         .balign 2
 th_tab: .long   hues, th_gold, th_ui, th_fire, th_ice
 

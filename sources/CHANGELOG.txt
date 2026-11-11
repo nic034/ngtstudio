@@ -1,3 +1,25 @@
+2.5.39 2026-11-11  Jukebox screen saver: smaller, see-through mini VU meter, mirrored on the spinning CD.
+                   CHANGED the mini VU meter is now a 32 x 32 px block at x 16..47, y 24..55: the exact mirror of the
+                        CD (x 272..303, same height, same 16 px margin).  It was 56 px wide with an opaque dark panel
+                        behind each bar.  Now two voices per fix cell, bars 3 px wide (6 before), and NO background:
+                        only the bars are drawn, the checkerboard and the text stay visible around them.  Each voice
+                        keeps its colour of the player screen VU meters (the right-hand voice of a cell uses colour 5
+                        of the cell palette, set once when the screen saver starts; colours 5 are not used elsewhere)
+                   CHANGED the track banner is centred on the screen again (columns 9..30), the wide VU meter no
+                        longer pushes it
+                   core.S: hud_vu (two bars per cell), hud_vpal; tiles.py: 81 new fix tiles m00..m88 (transparent
+                        background), after the existing ones (numbers of the other tiles unchanged).
+                        68000 program: 27080 -> 27230 bytes; custom tiles: 1728 -> 4320 bytes
+                   Measured in MAME 0.264 (real BIOS, Art of Fighting 2 album).  Vertical blank, text scene, 5 min:
+                        mean 29.15 lines (2.5.38: 29.07), worst image 36 of 40 as before; each voice still redrawn
+                        15 times a second, never in the heaviest image
+                   Tests: saver_hud.lua updated (4 x 4 cells of two-bar tiles, 7th voice alone, old columns empty,
+                        colour 5 of the cells, banner at its new place): 20/20.  Existing scripts against 2.5.38:
+                        same output for saver_test (12/12), saver_fuzz, saver_entry_press, saver_cover, saver_delay,
+                        saver_anim, album_wrap, toasty_combo, toasty_sfx, toasty_wake, random_mode.  A few images of
+                        main-loop timing apart (no sprite added): saver_perline 92 -> 93 sprites at worst, box_mix
+                        95 -> 94, toasty_stress 93 at another line, saver_endurance Z80 buffer minimum 6 -> 9 bytes,
+                        fuzz (no reset, no silent Z80).  NOT tested on real hardware
 2.5.38 2026-11-10  Jukebox screen saver: the checkerboard is back to its fixed dark grey (0x0222, as in 2.5.36).
                    REMOVED the slow tint drift and the brightening on drum hits added in 2.5.37: tiring for the eyes.
                         The three other 2.5.37 additions stay (mini VU meter, track banner, 5 colour themes)

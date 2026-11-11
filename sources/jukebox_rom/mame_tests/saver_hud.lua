@@ -1,4 +1,4 @@
--- Economiseur 2.5.37 / 2.5.38 : mini vumetre, annonce de piste, themes du grand texte ; damier reste gris.  PASS / FAIL.
+-- Economiseur 2.5.37 a 2.5.39 : mini vumetre (2.5.39 : 4 x 4 cases, 2 voies par case, fond transparent), annonce de piste, themes du grand texte ; damier reste gris.  PASS / FAIL.
 -- Copie de la couche fix tenue par espionnage des ecritures LSPC (aucune lecture qui derangerait le registre d'adresse).
 --   mame neogeo ngjb -hashpath hash -rompath . -video none -sound none -nothrottle -autoboot_script saver_hud.lua
 -- Dure ~4 min 30 de jeu : attend un tour complet des 5 themes et au moins un changement de piste (il faut un album dont
@@ -12,8 +12,8 @@ for tag, p in pairs(m.ioport.ports) do for name, f in pairs(p.fields) do F[name]
 local A = F["P1 A"] or F["P1 Button 1"]
 local R = 0x100000
 local V_SAVER, V_PT, V_THEME, V_ANN, V_ANNT, V_ANNB = R + 242, R + 66, R + 1760, R + 1762, R + 1764, R + 1766
-local ANN_W, ANN_COL, ANN_ROW, VCOL, VROW = 22, 10, 6, 2, 5
-local T_V0, T_NOTE, T_CLEAR = 0xC00, 0xC1D, 0xC34
+local ANN_W, ANN_COL, ANN_ROW, VCOL, VROW = 22, 9, 6, 2, 5
+local T_M00, T_NOTE, T_CLEAR = 0xC36, 0xC1D, 0xC34
 local fix, addr, inc = {}, 0, 1
 _G.tap = mem:install_write_tap(0x3C0000, 0x3C0005, "vram", function(off, data, mask)
   if off == 0x3C0000 then addr = data
@@ -55,13 +55,21 @@ emu.register_frame_done(function()
     end
     local th = mem:read_u16(V_THEME)
     if th ~= last_theme then themes[#themes + 1] = th; last_theme = th end
-    for v = 0, 6 do                                                        -- vumetre : 4 cases par voie, tuiles T_V0..T_V8
-      local filled = 0
+    for c = 0, 3 do                                                        -- vumetre : 4 x 4 cases, tuiles m00..m88
+      local fl, fr = 0, 0                                                  --   (m00 + 9 x gauche + droite)
       for r = 0, 3 do
-        local k = (cell(VCOL + v, VROW + r) & 0xFFF) - T_V0
-        if k < 0 or k > 8 then vu_bad = vu_bad + 1 else filled = filled + k end
+        local k = (cell(VCOL + c, VROW + r) & 0xFFF) - T_M00
+        if k < 0 or k > 80 or (c == 3 and k % 9 ~= 0) then vu_bad = vu_bad + 1 else fl = fl + k // 9; fr = fr + k % 9 end
       end
-      if filled > 0 then vu_live = vu_live + 1 end
+      if fl > 0 then vu_live = vu_live + 1 end
+      if fr > 0 then vu_live = vu_live + 1 end
+    end
+    for c = 4, 6 do for r = 0, 3 do                                        -- rien a droite du vumetre (colonnes 6..8, ancienne largeur)
+      if (cell(VCOL + c, VROW + r) & 0xFFF) ~= T_CLEAR then vu_bad = vu_bad + 1 end
+    end end
+    if sv and n > t0 + 30 then                                             -- couleur 5 des cases = couleur 1 de la voie de droite
+      local function pc(p, i) return mem:read_u16(0x400000 + p * 32 + i * 2) end
+      if pc(2, 5) ~= pc(2, 1) or pc(4, 5) ~= pc(5, 1) then vu_pal_bad = (vu_pal_bad or 0) + 1 end
     end
     if mem:read_u16(0x400222) ~= 0x0222 then floor_bad = floor_bad + 1 end  -- damier : gris fixe d'origine (2.5.38)
   end
@@ -77,7 +85,8 @@ emu.register_frame_done(function()
     end
     for i = 2, #banners do chk(banners[i][3] ~= banners[i - 1][3], "banner " .. i .. " is for another track than banner " .. (i - 1)) end
     chk(banner_clear(), "banner cells transparent again after closing")
-    chk(vu_bad == 0, "mini VU cells always hold bar tiles: " .. vu_bad .. " bad")
+    chk(vu_bad == 0, "mini VU: 4 x 4 cells of two-bar tiles, 7th voice alone, nothing beyond: " .. vu_bad .. " bad")
+    chk((vu_pal_bad or 0) == 0, "mini VU: colour 5 of the cells = colour 1 of the right-hand voice: " .. (vu_pal_bad or 0) .. " bad images")
     chk(vu_live > 1000, "mini VU moves with the music: " .. vu_live .. " lit bar-frames")
     local s = table.concat(themes, ",")
     chk(s == "0,1,2,3,4,0", "text themes in order, one per text pass, wrap to 0: " .. s)

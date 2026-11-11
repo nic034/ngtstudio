@@ -534,7 +534,7 @@ ci-dessous (amplitude minimale, espacement des objets).
 Quatre ajouts faits **sans aucun sprite** (palettes et couche fix, qui passe devant les sprites) : la limite de 96 sprites
 par ligne n'est pas concernée. Tout est dans `core.S` ; tables de couleurs par `tools/gen_saver_fx.py` (entre repères, avant `t_sc_play`).
 
-- **Mini vumètre** (`hud_fix` / `hud_vu`) : 7 voies, colonnes fix 2..8, rangées 5..8 (x 16..71, y 24..55 : le pendant du CD,
+- **Mini vumètre — REMPLACÉ en 2.5.39, voir plus bas** (`hud_fix` / `hud_vu`) : 7 voies, colonnes fix 2..8, rangées 5..8 (x 16..71, y 24..55 : le pendant du CD,
   même hauteur, même marge de 16 px). Tuiles `T_V0..T_V8` et couleurs `vupal` de l'interface (à 50 %, comme toutes les
   palettes 0..15 pendant l'économiseur ; le fond des cases est la couleur 2, opaque : petit panneau sombre). Niveau
   `V_LVL` (0..128) -> 0..32 px par la table `hud_vt`. Un groupe de voies par image (0-2, 3-4, 5-6), **rien dans l'image
@@ -601,3 +601,29 @@ plus). Mini vumètre, annonce de piste et thèmes du grand texte inchangés. Pro
   d'autres instants de départ), `saver_endurance` (minimum du tampon Z80 10 -> 6 octets, jamais vide), `fuzz`,
   `random_mode`. Autres BIOS et AES non rejoués sur cette version. **Non testé sur matériel réel.**
 - Leçon pour la suite : pas d'animation de couleur sur les grandes surfaces du fond (le damier couvre tout l'écran).
+
+## Économiseur 2.5.39 : mini vumètre réduit, sans fond, en miroir du CD
+
+Retour de Nicolas : le vumètre de la 2.5.37 est trop gros et son fond opaque gêne la vue.
+
+- **Place** : 4 × 4 cases de la couche fix, colonnes 2..5, rangées 5..8 = x 16..47, y 24..55, le miroir exact du CD
+  (`CD_X` 272, `CD_Y` 24, 32 × 32 px, marge de 16 px). 56 × 32 px avant.
+- **Deux voies par case**, barres de 3 px (x 1..3 et 5..7 de la case ; 6 px avant). Voies 1-2, 3-4, 5-6, 7 (seule,
+  barre de droite toujours vide). Tuiles `m00..m88` (81, `tiles.py`, après les autres : leurs numéros ne bougent pas) :
+  `T_M00 + 9 × gauche + droite`, remplissage 0..8 px depuis le bas, **fond couleur 0 = transparent** (pas de `add()`,
+  qui met le fond en couleur 2). Barre de gauche couleur 1, barre de droite couleur 5.
+- **Couleurs** : la case prend la palette de sa voie de gauche (`vupal`, comme l'interface) ; `hud_vpal` (appelée
+  par `pal_saver`, VBlank, une fois à l'entrée) y écrit en couleur 5 la couleur 1 à 50 % (`V_PALB`) de la palette de
+  la voie de droite : PAL2.c5 = cyan (cases 0, 1), PAL4.c5 = orange (case 2). `pal_copy` ne pose que les couleurs
+  0..4 : les couleurs 5 ne servent à rien d'autre et restent posées après le réveil sans effet visible.
+- **Rythme** : un groupe de cases par image (`hud_grp` : case 0, case 1, cases 2-3), rien dans l'image où le petit
+  texte se réécrit. 8 écritures VRAM au plus par image (12 avant).
+- **Annonce** recentrée : `ANN_COL` 10 -> 9 (x 72..247, centre de l'écran).
+- **Mesuré** (MAME 0.264, vrai BIOS euro, album AoF2) : VBlank scène texte, moyenne 29,15 lignes (2.5.38 : 29,07),
+  pire image hors réécriture 36 sur 40, inchangée. Programme 68000 27080 -> 27230 octets ; tuiles maison 1728 -> 4320.
+- **Tests** : `saver_hud.lua` 20/20 (cases 4 × 4 de tuiles à deux barres, 7e voie seule, colonnes 6..8 vides,
+  couleurs 5 des cases, annonce à sa nouvelle place). Contre la 2.5.38 : sortie identique pour `saver_test`,
+  `saver_fuzz`, `saver_entry_press`, `saver_cover`, `saver_delay`, `saver_anim`, `album_wrap`, `toasty_combo`,
+  `toasty_sfx`, `toasty_wake`, `random_mode` ; à quelques images de boucle principale près : `saver_perline` 92 -> 93,
+  `box_mix` 95 -> 94, `toasty_stress` (93, autre ligne), `saver_endurance` (tampon Z80 min 6 -> 9 octets), `fuzz`
+  (aucun reset, Z80 jamais muet). **Non testé sur matériel réel.**
