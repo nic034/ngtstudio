@@ -638,3 +638,23 @@ Retour de Nicolas : le vumètre de la 2.5.37 est trop gros et son fond opaque g�
   V-ROM était à 95 % du permis ; 10 albums refusés alors que l'écran aurait dit 88 %.
 - Maintenant : `max(used / allowed)` sur P-ROM, V-ROM, M1 (mêmes pourcentages que `capacity.txt`). 100 % = au bord du refus.
   Le programme 68000 ne change pas (le mot `$14E` est une donnée écrite par le constructeur ; la branche d'affichage 100..199 existait déjà).
+
+
+## 2.5.41 — Témoins des boutons J1 sur la liste des musiques
+
+- `draw_keys` (`parts/draw3.S`) dessine une ligne de 120 x 8 px, colonnes 2..16 / rangée 29
+  (x 16..135, y 216..223). Flèches, A/B/C/D, START et SELECT sont encadrés en police pixel 3 x 5.
+  Palette 3 grise au repos ; palette 4 verte pendant l'appui.
+- Lecture seule des entrées physiques : `$300000` pour directions/A/B/C/D, bits 0..1 de `$380000`
+  pour START/SELECT J1, actifs bas. Les bits du joueur 2, de la carte mémoire et AES/MVS sont masqués.
+  Aucun filtrage, événement BIOS consommé ni commande supplémentaire. État courant, sans mémoriser un appui court.
+- Appelé uniquement par le rendu de la vue liste : absent du plein écran et de l'économiseur. La sortie de
+  ces vues rétablit la ligne. L'avertissement P2 manquant commence désormais colonne 18 de la même rangée.
+- 15 tuiles FIX ajoutées en fin de table (`$C87..$C95`) ; toutes les tuiles antérieures sont identiques.
+  Programme 68000 : 27 354 octets (+124) ; tuiles maison : 4 800 octets (+480). Aucun nouvel espace RAM
+  ni sprite. Code Z80 inchangé. Les deux copies Python embarquent le programme et les tuiles reconstruits.
+- Vérifié dans MAME 0.276 avec ROMs de test à trois pistes : `mame_tests/input_monitor.lua`,
+  422/422 contrôles sur AES UniBIOS 4.0 (flux clairsemé puis dense), 422/422 sur AES UniBIOS 3.3.
+  Vérifie chaque touche, relâchement, masquage plein écran/économiseur, réveil, coexistence avec
+  l'avertissement P2 et ouverture/fermeture du menu UniBIOS. Banc START : 70/70 appuis de 1 à 60 images.
+  Non vérifié sur matériel réel. Régénérer les ROMs existantes avec NGT Studio 2.5.41.

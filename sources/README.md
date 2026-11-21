@@ -81,6 +81,10 @@ Testing a built jukebox in MAME: the set is `ngjb.zip` (ROM files inside) with `
 
 It plays automatically from power-on. MVS has no SELECT button, so it stays in AUTO.
 
+A tiny 120 x 8 px row of framed input labels sits at the bottom left of the music selection screen:
+direction arrows, A/B/C/D, START and SELECT. Grey means released; green means held. It reads player 1 hardware
+inputs without filtering or consuming the BIOS input events. It is hidden in the full-screen VU view and screen saver.
+
 Screen saver: after 5 minutes without a press, an Amiga-style demo screen: a big outlined rainbow sine scroll
 ("NEO GEO JUKEBOX - ENJOY FINE MUSIC !" while music plays, the wave swells with the music; "THANKS FOR USING THIS SOFTWARE"
 when stopped or paused) over a very faint isometric checkerboard that scrolls and ripples like water (more and faster when the music is loud), with the album,
@@ -192,6 +196,10 @@ final est coupé).
   ou RAND (une piste au hasard parmi tous les albums, jamais deux fois la même de suite).
 
 La lecture démarre automatiquement à l'allumage. Le MVS n'a pas de bouton SELECT : il reste en AUTO.
+
+Une ligne de petits témoins encadrés (120 x 8 px), en bas à gauche de l'écran de sélection, affiche les directions,
+A/B/C/D, START et SELECT du joueur 1 : gris au repos, vert pendant l'appui. Elle lit les entrées matérielles sans
+filtrer ni consommer les événements du BIOS. Elle est absente de la vue plein écran et de l'économiseur.
 
 Économiseur d'écran : après 5 minutes sans appui, un écran de démo façon Amiga : grand texte arc-en-ciel cerné de noir
 en sine scroll (« NEO GEO JUKEBOX - ENJOY FINE MUSIC ! » pendant la lecture, la vague gonfle avec la musique ; « THANKS FOR

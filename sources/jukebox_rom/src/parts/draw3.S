@@ -90,7 +90,45 @@ draw:   bsr     note_anim
         bsr     setaddr
         bsr     put_bar
         bsr     draw_vu_small
+        bsr     draw_keys
         bra     draw_marquee
+
+| J1 : etat physique courant, sans filtrer ni consommer les entrees du BIOS.
+| 120 x 8 px, bas gauche (colonnes 2..16, rangee 29) ; seulement en vue liste.
+| Gris au repos, vert maintenu. Aucune ecriture dans les registres de commande.
+draw_keys:
+        moveq   #2,d0
+        moveq   #29,d1
+        bsr     setaddr
+        moveq   #0,d4
+        move.b  0x380000,d4            | START / SELECT J1, bits 0 / 1 actifs bas
+        not.b   d4
+        and.w   #3,d4                  | ignore J2, carte memoire et type AES/MVS
+        lsl.w   #8,d4
+        move.b  0x300000,d5            | directions puis A/B/C/D J1, actifs bas
+        not.b   d5
+        or.b    d5,d4
+        lea     key_tiles,a0
+        moveq   #0,d5                  | bit de la touche
+        moveq   #9,d7
+1:      move.w  #PAL3,d2
+        btst    d5,d4
+        beq.s   2f
+        move.w  #PAL4,d2
+2:      move.w  (a0)+,d3
+        or.w    d2,d3
+        move.w  (a0)+,d6
+        subq.w  #1,d6
+3:      move.w  d3,2(a6)
+        addq.w  #1,d3
+        dbra    d6,3b
+        addq.w  #1,d5
+        dbra    d7,1b
+        rts
+key_tiles:
+        .word   T_KEY_UP0,1, T_KEY_DOWN0,1, T_KEY_LEFT0,1, T_KEY_RIGHT0,1
+        .word   T_KEY_A0,1, T_KEY_B0,1, T_KEY_C0,1, T_KEY_D0,1
+        .word   T_KEY_START0,3, T_KEY_SELECT0,4
 
 | notes de l'entete : la jaune (colonne 2) et la blanche (colonne 20) rebondissent de 2 pixels en opposition pendant
 | la lecture (poses 0-1-2-1, 8 images chacune : ~1,85 battement/s) ; a l'arret et en pause : pose du milieu
@@ -497,7 +535,7 @@ draw_static:
         cmp.w   #0xFFFF,d4
         beq.s   6f
         move.w  #PAL7,V_ATTR
-        moveq   #2,d0
+        moveq   #18,d0                 | laisse le temoin des boutons visible a gauche
         moveq   #29,d1
         bsr     setaddr
         lea     t_p2,a0

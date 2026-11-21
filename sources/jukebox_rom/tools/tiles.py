@@ -101,6 +101,39 @@ for a in range(9):
         T[f"m{a}{b}"] = (BASE + len(T), [[(1 if 1 <= x <= 3 and 7 - y < a else 5 if 5 <= x <= 7 and 7 - y < b else 0)
                                            for x in range(8)] for y in range(8)])
 
+# Tiny framed input labels (one 8 px row). Append only: existing tile numbers stay stable.
+# One spare pixel at the right separates adjacent boxes; label glyphs are 3 x 5 px.
+key_font = {
+    "A": ("010", "101", "111", "101", "101"),
+    "B": ("110", "101", "110", "101", "110"),
+    "C": ("011", "100", "100", "100", "011"),
+    "D": ("110", "101", "101", "101", "110"),
+    "E": ("111", "100", "110", "100", "111"),
+    "L": ("100", "100", "100", "100", "111"),
+    "R": ("110", "101", "110", "101", "101"),
+    "S": ("011", "100", "010", "001", "110"),
+    "T": ("111", "010", "010", "010", "010"),
+    "up": ("010", "111", "010", "010", "010"),
+    "down": ("010", "010", "010", "111", "010"),
+    "left": ("010", "100", "111", "100", "010"),
+    "right": ("010", "001", "111", "001", "010"),
+}
+for name, label, width in [(d, [d], 8) for d in ("up", "down", "left", "right")] + [
+        (c.lower(), c, 8) for c in "ABCD"] + [("start", "START", 24), ("select", "SELECT", 32)]:
+    px = [[0] * width for _ in range(8)]
+    for x in range(width - 1):
+        px[0][x] = px[7][x] = 1
+    for y in range(8):
+        px[y][0] = px[y][width - 2] = 1
+    x0 = (width - 1 - (len(label) * 4 - 1)) // 2
+    for k, ch in enumerate(label):
+        for y, row in enumerate(key_font[ch]):
+            for x, bit in enumerate(row):
+                if bit == "1":
+                    px[y + 2][x0 + 4 * k + x] = 1
+    for i in range(width // 8):
+        add(f"key_{name}{i}", [row[i * 8:(i + 1) * 8] for row in px])
+
 def tile_px(n):
     if n >= BASE:
         for name, (num, px) in T.items():

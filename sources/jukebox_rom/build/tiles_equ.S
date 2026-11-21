@@ -133,3 +133,18 @@
         .equ    T_M86, 0xC84
         .equ    T_M87, 0xC85
         .equ    T_M88, 0xC86
+        .equ    T_KEY_UP0, 0xC87
+        .equ    T_KEY_DOWN0, 0xC88
+        .equ    T_KEY_LEFT0, 0xC89
+        .equ    T_KEY_RIGHT0, 0xC8A
+        .equ    T_KEY_A0, 0xC8B
+        .equ    T_KEY_B0, 0xC8C
+        .equ    T_KEY_C0, 0xC8D
+        .equ    T_KEY_D0, 0xC8E
+        .equ    T_KEY_START0, 0xC8F
+        .equ    T_KEY_START1, 0xC90
+        .equ    T_KEY_START2, 0xC91
+        .equ    T_KEY_SELECT0, 0xC92
+        .equ    T_KEY_SELECT1, 0xC93
+        .equ    T_KEY_SELECT2, 0xC94
+        .equ    T_KEY_SELECT3, 0xC95

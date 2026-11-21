@@ -1,6 +1,11 @@
 NGT Studio - changelog since 2.5.0
 ==================================
 
+2.5.41 (2026-11-21)
+- Music selection screen: tiny framed direction/button labels at the bottom left, grey when released and green
+  while held. Read-only player 1 hardware inputs; hidden in the full-screen VU view and screen saver.
+- The missing P2 bank warning remains visible to the right of the input labels.
+
 2.5.40 (2026-11-11)
 - Jukebox screen: the "ROM nn%" at the top right now shows the fullest memory (P-ROM, V-ROM or M1), as a percentage of
   what the builder allows (limit minus the 5 % margin): 100 % = the edge of the refusal. It used to be (P-ROM + V-ROM)

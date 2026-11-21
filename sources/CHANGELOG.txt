@@ -1,3 +1,9 @@
+2.5.41 2026-11-21  Jukebox selection screen: tiny framed live input indicators at the bottom left.
+                   NEW  Direction arrows, A/B/C/D, START and SELECT: grey when released, green while held.
+                        Read-only hardware input display; no filtering or changes to game/BIOS controls.
+                        Hidden in the full-screen VU view and screen saver. Missing P2 warning stays visible.
+                   CHECKED MAME 0.276: input_monitor.lua 422/422 on AES UniBIOS 4.0 (sparse and dense streams)
+                        and 3.3; 70/70 START presses (1 to 60 frames). Existing tile bytes and Z80 unchanged.
 2.5.40 2026-11-11  Jukebox screen: the "ROM nn%" at the top right now shows the fullest memory.
                    CHANGED it used to be (P-ROM + V-ROM used) / (P-ROM + V-ROM limits).  The P-ROM is nearly empty (the
                         compressed streams are small) so the figure hid the real bottleneck, the V-ROM: 9 albums showed

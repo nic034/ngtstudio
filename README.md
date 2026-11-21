@@ -55,6 +55,8 @@ carry your favourite music on a real Neo Geo.
 - SELECT cycles **AUTO** (chains every track of every album, endlessly), **LOOP** (repeats one track) and **RAND**
   (a random track of any album, never twice in a row). MVS has no SELECT, so it stays in AUTO.
 - START opens a full-screen view with seven large VU meters and peak hold.
+- Tiny framed input indicators at the bottom left of the selection screen show player 1 directions, A/B/C/D,
+  START and SELECT: grey when released, green while held. They are hidden in the full-screen view and screen saver.
 - Plays automatically from power-on.
 - **Amiga-style screen saver** after 5 minutes without a press: a rainbow sine scroll that reacts to the music,
   a rippling isometric checkerboard, a spinning CD icon, drifting objects and a point sphere that bounces across the bottom of the screen.
@@ -67,6 +69,7 @@ carry your favourite music on a real Neo Geo.
 
 The full history is in [`sources/CHANGELOG.txt`](sources/CHANGELOG.txt). Recent versions:
 
+- **2.5.41**: tiny live input indicators on the music selection screen to help check controller buttons.
 - **2.5.29**: the Toasty check box is now called "Toasty Delta Island".
 - **2.5.40**: the "ROM nn%" shown by the jukebox is now the fullest memory (P-ROM, V-ROM or M1) against what the builder allows; 100 % = the edge of the refusal.
 - **2.5.39**: screen saver: smaller mini VU meter without background (thin bars only), mirrored on the spinning CD; track banner centred again.
